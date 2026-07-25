@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Tunify",
+    "slug": "tunify",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0a0a0a"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tunify.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0a0a"
+      },
+      "package": "com.tunify.app"
+    },
+    "plugins": [
+      "expo-av",
+      "expo-file-system"
+    ]
+  }
+}
