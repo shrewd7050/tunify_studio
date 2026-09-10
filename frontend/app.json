@@ -9,7 +9,9 @@
     "splash": {
       "backgroundColor": "#0a0a0a"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tunify.app"
@@ -20,9 +22,16 @@
       },
       "package": "com.tunify.app"
     },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
     "plugins": [
       "expo-av",
-      "expo-file-system"
+      "expo-file-system",
+      "expo-asset",
+      "expo-font",
+      "expo-document-picker"
     ]
   }
 }
