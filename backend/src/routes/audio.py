@@ -303,16 +303,25 @@ async def voice_swap(
     voice: UploadFile = File(...),
     correction_strength: float = Form(0.8),
 ):
-    """Swap vocals: separate backing from original song, auto-tune user voice to match, mix together."""
-    from src.ml.auto_tune import auto_tune
-    from src.ml.mixer import load_and_resample, align_lengths, normalize_audio, _apply_multiband_processing
+    """Swap vocals: separate backing, match melody phrase, align, pitch-correct, mix."""
+    from src.ml.mixer import load_and_resample, align_lengths, normalize_audio, _apply_multiband_processing, separate_vocals
     from src.ml.pitch_detection import detect_key_and_scale
+    from src.ml.vocal_match import (
+        extract_melody,
+        match_vocal_phrase,
+        extract_backing_section,
+        time_stretch_vocal,
+        pitch_correct_to_melody,
+    )
 
     loop = asyncio.get_event_loop()
     t0 = time.time()
     job_id = str(uuid.uuid4())[:8]
 
     try:
+        # ------------------------------------------------------------------
+        # 0. Save & convert uploads
+        # ------------------------------------------------------------------
         orig_ext = Path(original.filename).suffix.lower() or ".wav"
         orig_raw_path = str(UPLOAD_DIR / f"{job_id}_orig{orig_ext}")
         with open(orig_raw_path, "wb") as f:
@@ -335,29 +344,170 @@ async def voice_swap(
         else:
             voice_path = voice_raw_path
 
-        logger.info(f"[voice-swap] job={job_id} orig={orig_ext} voice={voice_ext} converted to wav")
+        logger.info(f"[voice-swap] job={job_id} files saved & converted ({time.time()-t0:.1f}s)")
 
-        logger.info(f"[voice-swap] job={job_id} separating vocals from original")
+        # ------------------------------------------------------------------
+        # 1. Demucs separation
+        # ------------------------------------------------------------------
+        t_stage = time.time()
+        logger.info(f"[voice-swap] job={job_id} separating vocals (demucs)")
         try:
-            from src.ml.mixer import separate_vocals
             sep_result = await loop.run_in_executor(
                 None, lambda: separate_vocals(orig_path, str(OUTPUT_DIR / job_id))
             )
         except Exception as sep_err:
-            logger.error(f"[voice-swap] job={job_id} separation crashed: {sep_err}")
-            raise HTTPException(500, f"Vocal separation failed: {sep_err}. Make sure Demucs is installed.")
+            logger.error(f"[voice-swap] job={job_id} demucs crashed: {sep_err}")
+            raise HTTPException(500, f"Vocal separation failed: {sep_err}")
 
         if not sep_result.get("success"):
-            raise HTTPException(500, f"Vocal separation failed: {sep_result.get('error', 'unknown')}")
+            raise HTTPException(500, f"Vocal separation failed: {sep_result.get('error')}")
 
+        original_vocal_path = sep_result["vocals_path"]
         original_backing_path = sep_result["accompaniment_path"]
+        logger.info(f"[voice-swap] job={job_id} demucs done ({time.time()-t_stage:.1f}s)")
 
-        logger.info(f"[voice-swap] job={job_id} detecting key from original")
+        # ------------------------------------------------------------------
+        # 2. Detect global key (metadata + fallback)
+        # ------------------------------------------------------------------
         key_info = await loop.run_in_executor(None, lambda: detect_key_and_scale(orig_path))
-        key = key_info["key"]
-        scale = key_info["scale"]
-        tempo = key_info.get("tempo")
-        logger.info(f"[voice-swap] job={job_id} key={key} {scale} tempo={tempo}")
+        key, scale, tempo = key_info["key"], key_info["scale"], key_info.get("tempo")
+        logger.info(f"[voice-swap] job={job_id} key={key} {scale} tempo={tempo:.0f}")
+
+        # ------------------------------------------------------------------
+        # 3. Match vocal phrases
+        # ------------------------------------------------------------------
+        t_stage = time.time()
+        logger.info(f"[voice-swap] job={job_id} matching vocal phrases")
+        match = await loop.run_in_executor(
+            None, lambda: match_vocal_phrase(original_vocal_path, voice_path)
+        )
+        logger.info(
+            f"[voice-swap] job={job_id} match: start={match['original_start']}s "
+            f"end={match['original_end']}s  confidence={match['confidence']}  "
+            f"({time.time()-t_stage:.1f}s)"
+        )
+
+        use_new_pipeline = match["success"] and match["confidence"] >= 0.3
+
+        if use_new_pipeline:
+            # ==============================================================
+            # NEW PIPELINE: melody-matched voice swap
+            # ==============================================================
+            matched_start = match["original_start"]
+            matched_end = match["original_end"]
+
+            # 4a. Extract matched backing section
+            t_stage = time.time()
+            matched_backing_path = str(OUTPUT_DIR / f"{job_id}_matched_backing.wav")
+            logger.info(f"[voice-swap] job={job_id} extracting backing section {matched_start:.1f}s–{matched_end:.1f}s")
+            backing_sec = await loop.run_in_executor(
+                None,
+                lambda: extract_backing_section(
+                    original_backing_path, matched_start, matched_end, matched_backing_path
+                ),
+            )
+            target_duration = backing_sec["duration"]
+            logger.info(f"[voice-swap] job={job_id} backing section: {target_duration:.1f}s ({time.time()-t_stage:.1f}s)")
+
+            # 4b. Time-stretch user vocal to match
+            t_stage = time.time()
+            stretched_path = str(OUTPUT_DIR / f"{job_id}_stretched.wav")
+            logger.info(f"[voice-swap] job={job_id} time-stretching user vocal")
+            stretch = await loop.run_in_executor(
+                None, lambda: time_stretch_vocal(voice_path, stretched_path, target_duration)
+            )
+            logger.info(f"[voice-swap] job={job_id} stretch done ({time.time()-t_stage:.1f}s)")
+
+            # 4c. Extract target melody from matched section
+            t_stage = time.time()
+            logger.info(f"[voice-swap] job={job_id} extracting target melody for section")
+            orig_melody = await loop.run_in_executor(
+                None, lambda: extract_melody(original_vocal_path)
+            )
+            section_melody = [
+                n for n in orig_melody
+                if matched_start <= n["start"] <= matched_end
+            ]
+            # shift times so they start near 0 (aligned with stretched vocal)
+            if section_melody:
+                t0_shift = section_melody[0]["start"]
+                section_melody = [
+                    {**n, "start": n["start"] - t0_shift, "end": n["end"] - t0_shift}
+                    for n in section_melody
+                ]
+            logger.info(
+                f"[voice-swap] job={job_id} target melody: {len(section_melody)} notes ({time.time()-t_stage:.1f}s)"
+            )
+
+            # 4d. Pitch-correct toward target melody
+            t_stage = time.time()
+            corrected_path = str(OUTPUT_DIR / f"{job_id}_voice_tuned.wav")
+            logger.info(f"[voice-swap] job={job_id} pitch-correcting toward melody")
+            tune_result = await loop.run_in_executor(
+                None,
+                lambda: pitch_correct_to_melody(
+                    input_path=stretch["output_path"] if stretch["stretched"] else voice_path,
+                    output_path=corrected_path,
+                    target_melody=section_melody,
+                    correction_strength=correction_strength,
+                ),
+            )
+            logger.info(f"[voice-swap] job={job_id} pitch correction done ({time.time()-t_stage:.1f}s)")
+
+            # 4e. Mix corrected vocal with matched backing
+            t_stage = time.time()
+            final_path = str(OUTPUT_DIR / f"{job_id}_voice_swap.wav")
+            logger.info(f"[voice-swap] job={job_id} mixing final result")
+
+            def _do_mix():
+                vocal, sr = load_and_resample(corrected_path, target_sr=44100)
+                backing, _ = load_and_resample(matched_backing_path, target_sr=44100)
+                vocal, backing = align_lengths(vocal, backing)
+                vocal = normalize_audio(vocal, target_db=-18.0)
+                backing = normalize_audio(backing, target_db=-20.0)
+                vocal, backing = _apply_multiband_processing(vocal, backing, sr)
+                mixed = vocal + backing
+                peak = np.max(np.abs(mixed))
+                if peak > 0.95:
+                    mixed = mixed * (0.95 / peak)
+                if mixed.ndim == 1:
+                    stereo = np.stack([mixed, mixed], axis=-1)
+                else:
+                    stereo = mixed
+                import soundfile as sf
+                sf.write(final_path, stereo, sr)
+                return {"duration": float(len(mixed) / sr), "sample_rate": sr}
+
+            mix_info = await loop.run_in_executor(None, _do_mix)
+            logger.info(f"[voice-swap] job={job_id} mix done ({time.time()-t_stage:.1f}s)")
+
+            total = time.time() - t0
+            logger.info(f"[voice-swap] job={job_id} completed in {total:.1f}s (new pipeline)")
+
+            return {
+                "success": True,
+                "job_id": job_id,
+                "key": key,
+                "scale": scale,
+                "tempo": tempo,
+                "duration": mix_info["duration"],
+                "processing_time": round(total, 1),
+                "voice_swapped_url": f"/outputs/{job_id}_voice_swap.wav",
+                "original_backing_url": f"/outputs/{job_id}/htdemucs/{Path(orig_path).stem}/no_vocals.wav",
+                "matched_backing_url": f"/outputs/{job_id}_matched_backing.wav",
+                "tuned_voice_url": f"/outputs/{job_id}_voice_tuned.wav",
+                "match_confidence": match["confidence"],
+                "original_start": match["original_start"],
+                "original_end": match["original_end"],
+                "pipeline": "melody_match",
+            }
+
+        # ==================================================================
+        # FALLBACK PIPELINE: global key auto-tune (original behaviour)
+        # ==================================================================
+        logger.info(f"[voice-swap] job={job_id} low confidence ({match['confidence']}) – falling back to global key pipeline")
+
+        from src.ml.auto_tune import auto_tune
 
         autotuned_voice_path = str(OUTPUT_DIR / f"{job_id}_voice_tuned.wav")
         logger.info(f"[voice-swap] job={job_id} auto-tuning voice to {key} {scale}")
@@ -371,12 +521,10 @@ async def voice_swap(
                 correction_strength=correction_strength,
             ),
         )
-        logger.info(f"[voice-swap] job={job_id} auto-tune done in {time.time()-t0:.1f}s")
 
         final_path = str(OUTPUT_DIR / f"{job_id}_voice_swap.wav")
-        logger.info(f"[voice-swap] job={job_id} mixing voice with original backing")
 
-        def _do_mix():
+        def _do_mix_fallback():
             vocal, sr = load_and_resample(autotuned_voice_path, target_sr=44100)
             backing, _ = load_and_resample(original_backing_path, target_sr=44100)
             vocal, backing = align_lengths(vocal, backing)
@@ -395,8 +543,9 @@ async def voice_swap(
             sf.write(final_path, stereo, sr)
             return {"duration": float(len(mixed) / sr), "sample_rate": sr}
 
-        await loop.run_in_executor(None, _do_mix)
-        logger.info(f"[voice-swap] job={job_id} done in {time.time()-t0:.1f}s")
+        await loop.run_in_executor(None, _do_mix_fallback)
+        total = time.time() - t0
+        logger.info(f"[voice-swap] job={job_id} completed in {total:.1f}s (fallback pipeline)")
 
         return {
             "success": True,
@@ -405,10 +554,14 @@ async def voice_swap(
             "scale": scale,
             "tempo": tempo,
             "duration": tune_result["duration"],
-            "processing_time": round(time.time() - t0, 1),
+            "processing_time": round(total, 1),
             "voice_swapped_url": f"/outputs/{job_id}_voice_swap.wav",
             "original_backing_url": f"/outputs/{job_id}/htdemucs/{Path(orig_path).stem}/no_vocals.wav",
             "tuned_voice_url": f"/outputs/{job_id}_voice_tuned.wav",
+            "match_confidence": match["confidence"],
+            "original_start": match["original_start"],
+            "original_end": match["original_end"],
+            "pipeline": "global_key_fallback",
         }
 
     except HTTPException:

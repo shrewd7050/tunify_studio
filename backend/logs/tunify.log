@@ -619,3 +619,49 @@ Traceback (most recent call last):
 2026-09-11 01:39:17,362 INFO [MusicGen] torch.compile applied to LM and compression model
 2026-09-11 01:39:17,363 INFO [MusicGen] Model loaded on cuda (torch.float16)
 2026-09-11 01:39:17,363 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 01:45:19,472 INFO [voice-swap] job=d0673d93 orig=.m4a voice=.aac converted to wav
+2026-09-11 01:45:19,472 INFO [voice-swap] job=d0673d93 separating vocals from original
+2026-09-11 01:47:48,422 INFO [voice-swap] job=d0673d93 detecting key from original
+2026-09-11 01:47:55,421 INFO [voice-swap] job=d0673d93 key=C# major tempo=83.35433467741936
+2026-09-11 01:47:55,421 INFO [voice-swap] job=d0673d93 auto-tuning voice to C# major
+2026-09-11 01:48:00,126 INFO [voice-swap] job=d0673d93 auto-tune done in 163.4s
+2026-09-11 01:48:00,127 INFO [voice-swap] job=d0673d93 mixing voice with original backing
+2026-09-11 01:48:09,179 INFO [voice-swap] job=d0673d93 done in 172.5s
+2026-09-11 02:07:03,487 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 02:07:03,488 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 02:07:15,850 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 02:07:24,922 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 02:07:25,970 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 02:07:25,970 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 02:07:25,970 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 02:09:00,477 INFO [voice-swap] job=e37daa55 orig=.m4a voice=.aac converted to wav
+2026-09-11 02:09:00,477 INFO [voice-swap] job=e37daa55 separating vocals from original
+2026-09-11 02:11:33,494 INFO [voice-swap] job=e37daa55 detecting key from original
+2026-09-11 02:11:39,806 INFO [voice-swap] job=e37daa55 key=C# major tempo=83.35433467741936
+2026-09-11 02:11:39,807 INFO [voice-swap] job=e37daa55 auto-tuning voice to C# major
+2026-09-11 02:11:44,302 INFO [voice-swap] job=e37daa55 auto-tune done in 166.4s
+2026-09-11 02:11:44,303 INFO [voice-swap] job=e37daa55 mixing voice with original backing
+2026-09-11 02:11:51,151 INFO [voice-swap] job=e37daa55 done in 173.3s
+2026-09-11 02:35:16,067 INFO [voice-swap] job=69a39dfb orig=.m4a voice=.aac converted to wav
+2026-09-11 02:35:16,067 INFO [voice-swap] job=69a39dfb separating vocals from original
+2026-09-11 02:37:49,157 INFO [voice-swap] job=69a39dfb detecting key from original
+2026-09-11 02:37:51,881 INFO [voice-swap] job=69a39dfb key=C# major tempo=83.35433467741936
+2026-09-11 02:37:51,881 INFO [voice-swap] job=69a39dfb auto-tuning voice to C# major
+2026-09-11 02:37:56,477 INFO [voice-swap] job=69a39dfb auto-tune done in 161.1s
+2026-09-11 02:37:56,478 INFO [voice-swap] job=69a39dfb mixing voice with original backing
+2026-09-11 02:38:00,779 INFO [voice-swap] job=69a39dfb done in 165.4s
+2026-09-11 02:52:30,407 INFO [voice-swap] job=80c285e6 orig=.m4a voice=.aac converted to wav
+2026-09-11 02:52:30,408 INFO [voice-swap] job=80c285e6 separating vocals from original
+2026-09-11 02:55:01,432 INFO [voice-swap] job=80c285e6 detecting key from original
+2026-09-11 02:55:04,110 INFO [voice-swap] job=80c285e6 key=C# major tempo=83.35433467741936
+2026-09-11 02:55:04,110 INFO [voice-swap] job=80c285e6 auto-tuning voice to C# major
+2026-09-11 02:55:09,976 INFO [voice-swap] job=80c285e6 auto-tune done in 160.2s
+2026-09-11 02:55:09,977 INFO [voice-swap] job=80c285e6 mixing voice with original backing
+2026-09-11 02:55:18,637 INFO [voice-swap] job=80c285e6 done in 168.9s
+2026-09-11 03:34:50,742 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 03:34:50,743 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 03:35:41,078 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 03:35:51,090 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 03:35:53,333 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 03:35:53,333 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 03:35:53,334 INFO [Tunify] MusicGen model pre-warmed successfully

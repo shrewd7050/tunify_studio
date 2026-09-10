@@ -1,3 +1,4 @@
+import sys
 import logging
 import numpy as np
 import librosa
@@ -237,7 +238,7 @@ def separate_vocals(audio_path: str, output_dir: str) -> dict:
 
     try:
         cmd = [
-            "python", "-m", "demucs",
+            sys.executable, "-m", "demucs",
             "--out", output_dir,
             "--two-stems", "vocals",
             audio_path,
