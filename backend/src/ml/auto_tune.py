@@ -1,7 +1,7 @@
 import numpy as np
 import librosa
 import soundfile as sf
-import parselmouth
+import scipy.signal
 from pathlib import Path
 
 
@@ -23,9 +23,7 @@ SCALE_INTERVALS = {
 
 def get_scale_pitches(key: str, scale: str, octave_low: int = 3, octave_high: int = 6) -> list:
     """Get all valid pitch frequencies for a key/scale combination."""
-    key_offset = KEY_OFFSETS.get(key.upper().rstrip('#') if key.upper() not in KEY_OFFSETS else key.upper(), 0)
-    if key.upper() in KEY_OFFSETS:
-        key_offset = KEY_OFFSETS[key.upper()]
+    key_offset = KEY_OFFSETS.get(key.upper(), 0)
     intervals = SCALE_INTERVALS.get(scale, SCALE_INTERVALS['major'])
 
     pitches = []
@@ -46,6 +44,19 @@ def snap_to_nearest(freq, target_pitches):
     return target_pitches[int(np.argmin(distances))]
 
 
+def _snap_to_nearest_batch(freqs, target_pitches_arr):
+    """Vectorized snap: snap array of frequencies to nearest target pitches."""
+    result = np.copy(freqs)
+    valid = (~np.isnan(freqs)) & (freqs > 0)
+    if not np.any(valid):
+        return result
+    f = freqs[valid]
+    distances = np.abs(f[:, np.newaxis] - target_pitches_arr[np.newaxis, :])
+    nearest = target_pitches_arr[np.argmin(distances, axis=1)]
+    result[valid] = nearest
+    return result
+
+
 def auto_tune(
     input_path: str,
     output_path: str,
@@ -55,7 +66,7 @@ def auto_tune(
     pitch_shift_semitones: float = 0.0,
 ) -> dict:
     """
-    Auto-tune an audio file using parselmouth pitch manipulation.
+    Auto-tune an audio file using librosa pitch detection and correction.
 
     Args:
         input_path: Path to input audio
@@ -67,6 +78,7 @@ def auto_tune(
     """
     y, sr = librosa.load(input_path, sr=44100, mono=True)
 
+    key_info = None
     if key is None:
         from src.ml.pitch_detection import detect_key_and_scale
         key_info = detect_key_and_scale(input_path)
@@ -74,54 +86,53 @@ def auto_tune(
         scale = key_info['scale']
 
     target_pitches = get_scale_pitches(key, scale)
+    target_pitches_arr = np.array(target_pitches)
 
-    snd = parselmouth.Sound(y, sampling_frequency=sr)
-    pitch_obj = snd.to_pitch(time_step=0.01, pitch_floor=60, pitch_cease=600)
+    n_fft = 2048
+    hop_length = 512
 
-    time_steps = pitch_obj.xs()
-    pitch_values = pitch_obj.selected_array['frequency']
+    f0, voiced_flag, voiced_probs = librosa.pyin(
+        y, fmin=librosa.note_to_hz('C2'), fmax=librosa.note_to_hz('C7'), sr=sr,
+        hop_length=hop_length
+    )
+    times = librosa.times_like(f0, sr=sr, hop_length=hop_length)
 
-    corrected_pitches = np.copy(pitch_values)
-    for i, f0 in enumerate(pitch_values):
-        if f0 > 0:
-            shifted_f0 = f0 * (2 ** (pitch_shift_semitones / 12.0))
-            snapped = snap_to_nearest(shifted_f0, target_pitches)
-            corrected_pitches[i] = f0 + (snapped - f0) * correction_strength
+    shifted_f0 = np.where(
+        (~np.isnan(f0)) & (f0 > 0),
+        f0 * (2 ** (pitch_shift_semitones / 12.0)),
+        f0,
+    )
+    snapped = _snap_to_nearest_batch(shifted_f0, target_pitches_arr)
+    valid_mask = (~np.isnan(f0)) & (f0 > 0) & (~np.isnan(snapped))
+    corrected_pitches = np.copy(f0)
+    corrected_pitches[valid_mask] = f0[valid_mask] + (snapped[valid_mask] - f0[valid_mask]) * correction_strength
 
-    pitch_tier = parselmouth.PitchTier(sampling_frequency=sr)
-    for i, t in enumerate(time_steps):
-        if corrected_pitches[i] > 0:
-            pitch_tier.add(t, corrected_pitches[i])
+    valid_mask = (~np.isnan(f0)) & (f0 > 0) & (~np.isnan(corrected_pitches)) & (corrected_pitches > 0)
+    ratios = np.where(valid_mask, corrected_pitches / np.maximum(f0, 1e-8), 1.0)
 
-    duration = len(y) / sr
-    output_y = np.zeros_like(y)
+    D = librosa.stft(y, n_fft=n_fft, hop_length=hop_length)
+    freqs = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
+    mag = np.abs(D)
+    phase = np.angle(D)
+    n_frames = D.shape[1]
 
-    for i in range(len(time_steps) - 1):
-        t_start = time_steps[i]
-        t_end = time_steps[i + 1]
-        if t_start >= duration:
-            break
+    if len(ratios) != n_frames:
+        ratios = np.interp(
+            np.linspace(0, 1, n_frames),
+            np.linspace(0, 1, len(ratios)),
+            ratios,
+        )
 
-        idx_start = max(0, int(t_start * sr))
-        idx_end = min(len(y), int(t_end * sr))
-
-        if idx_end <= idx_start:
-            continue
-
-        segment = y[idx_start:idx_end]
-
-        if corrected_pitches[i] > 0 and pitch_values[i] > 0:
-            ratio = corrected_pitches[i] / pitch_values[i]
-            target_semitones = 12.0 * np.log2(ratio) + pitch_shift_semitones
-            if abs(target_semitones) > 0.01:
-                shifted = librosa.effects.pitch_shift(
-                    segment.astype(np.float32), sr=sr, n_steps=float(target_semitones)
-                )
-                output_y[idx_start:idx_end] = shifted
-            else:
-                output_y[idx_start:idx_end] = segment
+    output_D = np.empty_like(D)
+    for i in range(n_frames):
+        r = ratios[i]
+        if abs(r - 1.0) < 0.001:
+            output_D[:, i] = D[:, i]
         else:
-            output_y[idx_start:idx_end] = segment
+            new_mag = np.interp(freqs, freqs * r, mag[:, i], left=0.0, right=0.0)
+            output_D[:, i] = new_mag * np.exp(1j * phase[:, i])
+
+    output_y = librosa.istft(output_D, hop_length=hop_length, length=len(y))
 
     sf.write(output_path, output_y, sr)
 
@@ -129,6 +140,7 @@ def auto_tune(
         "success": True,
         "key": key,
         "scale": scale,
+        "tempo": key_info["tempo"] if key_info is not None else None,
         "correction_strength": correction_strength,
         "pitch_shift": pitch_shift_semitones,
         "duration": float(len(y) / sr),

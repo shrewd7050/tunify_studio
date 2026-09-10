@@ -1,8 +1,10 @@
+import logging
 import numpy as np
 import librosa
 import soundfile as sf
-from pydub import AudioSegment
 from pathlib import Path
+
+logger = logging.getLogger("tunify")
 
 
 def load_and_resample(audio_path: str, target_sr: int = 44100) -> tuple:
@@ -91,6 +93,8 @@ def mix_tracks(
     vocal = vocal * vocal_gain
     backing = backing * backing_gain
 
+    vocal, backing = _apply_multiband_processing(vocal, backing, sr)
+
     if apply_reverb and reverb_amount > 0:
         vocal = _simple_reverb(vocal, sr, amount=reverb_amount)
 
@@ -154,6 +158,76 @@ def _apply_stereo_pan(y: np.ndarray, pan: float) -> np.ndarray:
     return stereo.flatten() if stereo.shape[-1] == 2 else stereo
 
 
+def _apply_eq_band(y: np.ndarray, sr: int, center_hz: float, gain_db: float, q: float = 1.0) -> np.ndarray:
+    """Apply a single peaking EQ band."""
+    from scipy.signal import lfilter
+    w0 = 2 * np.pi * center_hz / sr
+    A = 10 ** (gain_db / 40.0)
+    alpha = np.sin(w0) / (2 * q)
+    b0 = 1 + alpha * A
+    b1 = -2 * np.cos(w0)
+    b2 = 1 - alpha * A
+    a0 = 1 + alpha / A
+    a1 = -2 * np.cos(w0)
+    a2 = 1 - alpha / A
+    b = np.array([b0 / a0, b1 / a0, b2 / a0])
+    a = np.array([1.0, a1 / a0, a2 / a0])
+    return lfilter(b, a, y)
+
+
+def _boost_bass(y: np.ndarray, sr: int, boost_db: float = 2.0) -> np.ndarray:
+    """Boost low-end bass frequencies."""
+    y = _apply_eq_band(y, sr, 80, boost_db, q=0.7)
+    y = _apply_eq_band(y, sr, 150, boost_db * 0.6, q=1.0)
+    peak = np.max(np.abs(y))
+    if peak > 0:
+        y = y / peak
+    return y
+
+
+def _carve_vocal_space(y: np.ndarray, sr: int) -> np.ndarray:
+    """Cut low-mid frequencies in backing to make room for vocals."""
+    y = _apply_eq_band(y, sr, 350, -3.0, q=1.2)
+    y = _apply_eq_band(y, sr, 800, -2.0, q=1.0)
+    peak = np.max(np.abs(y))
+    if peak > 0:
+        y = y / peak
+    return y
+
+
+def _apply_sidechain_ducking(vocal: np.ndarray, backing: np.ndarray, sr: int, amount: float = 0.15) -> np.ndarray:
+    """Duck backing track volume when vocals are present."""
+    hop = 512
+    n_frames = 1 + len(vocal) // hop
+    vocal_env = np.zeros(n_frames)
+    for i in range(n_frames):
+        s = i * hop
+        e = min(s + hop, len(vocal))
+        vocal_env[i] = np.sqrt(np.mean(vocal[s:e] ** 2))
+
+    vocal_env = np.maximum(vocal_env, 0.0)
+    threshold = np.mean(vocal_env) * 1.2
+    duck = np.ones(n_frames)
+    mask = vocal_env > threshold
+    duck[mask] = 1.0 - amount * ((vocal_env[mask] - threshold) / (np.max(vocal_env) - threshold + 1e-8))
+
+    duck_samples = np.interp(np.arange(len(backing)), np.arange(n_frames) * hop, duck)
+    return backing * duck_samples
+
+
+def _apply_multiband_processing(vocal: np.ndarray, backing: np.ndarray, sr: int) -> tuple:
+    """Apply frequency-aware processing to vocal + backing pair."""
+    backing = _carve_vocal_space(backing, sr)
+    backing = _boost_bass(backing, sr, boost_db=1.5)
+    backing = _apply_sidechain_ducking(vocal, backing, sr, amount=0.12)
+    vocal = _apply_eq_band(vocal, sr, 3000, 1.5, q=1.0)
+    vocal = _apply_eq_band(vocal, sr, 120, -2.0, q=0.8)
+    vocal_peak = np.max(np.abs(vocal))
+    if vocal_peak > 0:
+        vocal = vocal / vocal_peak
+    return vocal, backing
+
+
 def separate_vocals(audio_path: str, output_dir: str) -> dict:
     """Separate vocals from accompaniment using Demucs."""
     import subprocess
@@ -168,11 +242,33 @@ def separate_vocals(audio_path: str, output_dir: str) -> dict:
             "--two-stems", "vocals",
             audio_path,
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+
+        if result.returncode != 0:
+            logger.error(f"demucs failed (rc={result.returncode}): {result.stderr[:500]}")
+            return {"success": False, "error": result.stderr[:300] or "demucs process failed"}
 
         audio_name = Path(audio_path).stem
         vocals_path = os.path.join(output_dir, "htdemucs", audio_name, "vocals.wav")
         accompaniment_path = os.path.join(output_dir, "htdemucs", audio_name, "no_vocals.wav")
+
+        if not os.path.exists(accompaniment_path):
+            for root, dirs, files in os.walk(output_dir):
+                for f in files:
+                    if f == "no_vocals.wav":
+                        accompaniment_path = os.path.join(root, f)
+                        break
+
+        if not os.path.exists(vocals_path):
+            for root, dirs, files in os.walk(output_dir):
+                for f in files:
+                    if f == "vocals.wav":
+                        vocals_path = os.path.join(root, f)
+                        break
+
+        if not os.path.exists(accompaniment_path):
+            logger.error(f"demucs output not found: {accompaniment_path}")
+            return {"success": False, "error": f"No output file found after demucs separation"}
 
         return {
             "success": True,

@@ -1,8 +1,9 @@
 import os
 import uuid
+import shutil
+import time
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse
 from typing import Optional
 
 router = APIRouter()
@@ -21,10 +22,13 @@ async def generate_music_endpoint(
     """Generate music from a text prompt."""
     from src.ml.music_gen import generate_music
 
+    duration = max(1.0, min(30.0, duration))
+
     job_id = str(uuid.uuid4())[:8]
     output_path = str(OUTPUT_DIR / f"{job_id}_generated.wav")
 
     try:
+        t0 = time.time()
         result = generate_music(
             prompt=prompt,
             output_path=output_path,
@@ -32,6 +36,7 @@ async def generate_music_endpoint(
             temperature=temperature,
             top_k=top_k,
         )
+        result["processing_time"] = round(time.time() - t0, 1)
         return {
             "success": True,
             "job_id": job_id,
@@ -57,16 +62,17 @@ async def generate_accompaniment(
     output_path = str(OUTPUT_DIR / f"{job_id}_accompaniment.wav")
 
     with open(input_path, "wb") as f:
-        import shutil
         shutil.copyfileobj(file.file, f)
 
     try:
+        t0 = time.time()
         result = generate_music_from_audio(
             input_audio_path=input_path,
             output_path=output_path,
             prompt=prompt or "musical accompaniment, backing track, instrumental",
             duration=min(duration, 30.0),
         )
+        result["processing_time"] = round(time.time() - t0, 1)
         return {
             "success": True,
             "job_id": job_id,

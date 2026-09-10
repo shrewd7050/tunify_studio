@@ -1,0 +1,561 @@
+2026-08-20 15:04:36,986 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-08-20 15:04:44,729 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-08-20 15:04:44,730 INFO [MusicGen] Generating: 'musical backing track in F major, instrumental accompaniment' (30.0s)
+2026-08-20 15:06:08,868 INFO [MusicGen] Saved to outputs\3dbbdca4_backing.wav
+2026-08-20 15:06:08,869 INFO [process] job=3dbbdca4 auto_tune + generate_music done in 149.8s
+2026-08-20 15:06:08,870 INFO [process] job=3dbbdca4 starting mix_tracks
+2026-08-20 15:06:09,275 INFO [process] job=3dbbdca4 mix_tracks done in 150.2s
+2026-08-20 15:06:09,275 INFO [process] job=3dbbdca4 complete in 150.2s
+2026-08-20 15:42:05,960 INFO [process] job=07401586 analyzing uploads\07401586.wav
+2026-08-20 15:42:28,384 INFO [process] job=07401586 key=F minor tempo=143.5546875 vocal=soprano/high prompt='professional backing track in F minor, tempo 144 bpm, rich bass guitar and warm low-end synths, full-bodied pads, depth and warmth in lower frequencies, punchy kick drum, tight snare, crisp hi-hats, prominent bass line, deep low-end foundation, lush chorus harmonies, shimmering reverb tails, rich orchestral arrangement, layered instrumentation, professional studio mix, clear separation between instruments, radio-ready production quality'
+2026-08-20 15:42:49,472 INFO [process] job=07401586 auto_tune done in 43.5s
+2026-08-20 15:42:49,472 INFO [process] job=07401586 starting generate_music (200.1s): 'professional backing track in F minor, tempo 144 bpm, rich bass guitar and warm low-end synths, full-bodied pads, depth and warmth in lower frequencies, punchy kick drum, tight snare, crisp hi-hats, prominent bass line, deep low-end foundation, lush chorus harmonies, shimmering reverb tails, rich orchestral arrangement, layered instrumentation, professional studio mix, clear separation between instruments, radio-ready production quality'
+2026-08-20 15:43:01,993 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-08-20 15:43:09,830 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-08-20 15:43:09,830 INFO [MusicGen] Generating: 'professional backing track in F minor, tempo 144 bpm, rich bass guitar and warm low-end synths, full-bodied pads, depth and warmth in lower frequencies, punchy kick drum, tight snare, crisp hi-hats, prominent bass line, deep low-end foundation, lush chorus harmonies, shimmering reverb tails, rich orchestral arrangement, layered instrumentation, professional studio mix, clear separation between instruments, radio-ready production quality' (200.06401360544217s) via chunked generation
+2026-08-20 15:44:17,393 INFO [MusicGen] Chunk done, 170.1s remaining
+2026-08-20 15:44:17,407 WARNING [process] job=07401586 generate_music failed: only one element tensors can be converted to Python scalars. Proceeding with autotuned only.
+2026-08-20 15:44:17,407 INFO [process] job=07401586 complete in 131.4s
+2026-08-20 15:49:09,287 INFO [process] job=4363a715 analyzing uploads\4363a715.wav
+2026-08-20 15:49:23,524 INFO [process] job=4363a715 key=C# major tempo=172.265625 vocal=tenor/alto prompt='professional backing track in C# major, tempo 172 bpm, balanced bass and warm synth pads, clean electric guitar, atmospheric textures, punchy kick drum, tight snare, crisp hi-hats, prominent bass line, deep low-end foundation, lush chorus harmonies, shimmering reverb tails, rich orchestral arrangement, layered instrumentation, professional studio mix, clear separation between instruments, radio-ready production quality'
+2026-08-20 15:49:35,485 INFO [process] job=4363a715 auto_tune done in 26.2s
+2026-08-20 15:49:35,485 INFO [process] job=4363a715 starting generate_music (155.7s): 'professional backing track in C# major, tempo 172 bpm, balanced bass and warm synth pads, clean electric guitar, atmospheric textures, punchy kick drum, tight snare, crisp hi-hats, prominent bass line, deep low-end foundation, lush chorus harmonies, shimmering reverb tails, rich orchestral arrangement, layered instrumentation, professional studio mix, clear separation between instruments, radio-ready production quality'
+2026-08-20 15:49:35,486 INFO [MusicGen] Generating: 'professional backing track in C# major, tempo 172 bpm, balanced bass and warm synth pads, clean electric guitar, atmospheric textures, punchy kick drum, tight snare, crisp hi-hats, prominent bass line, deep low-end foundation, lush chorus harmonies, shimmering reverb tails, rich orchestral arrangement, layered instrumentation, professional studio mix, clear separation between instruments, radio-ready production quality' (155.66934240362812s) via chunked generation
+2026-08-20 15:50:29,449 INFO [MusicGen] Chunk done, 125.7s remaining
+2026-08-20 15:50:29,451 WARNING [process] job=4363a715 generate_music failed: only one element tensors can be converted to Python scalars. Proceeding with autotuned only.
+2026-08-20 15:50:29,451 INFO [process] job=4363a715 complete in 80.2s
+2026-08-26 15:43:20,181 INFO [process] job=518e688c analyzing uploads\518e688c.wav
+2026-08-26 15:43:20,191 ERROR [process] job=518e688c FAILED: Error opening 'uploads\\518e688c.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\518e688c.wav': Format not recognised.
+2026-08-26 15:43:26,876 INFO [process] job=518e688c analyzing uploads\518e688c.wav
+2026-08-26 15:43:26,879 ERROR [process] job=518e688c FAILED: Error opening 'uploads\\518e688c.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\518e688c.wav': Format not recognised.
+2026-08-26 15:43:28,036 INFO [process] job=518e688c analyzing uploads\518e688c.wav
+2026-08-26 15:43:28,039 ERROR [process] job=518e688c FAILED: Error opening 'uploads\\518e688c.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\518e688c.wav': Format not recognised.
+2026-08-26 15:43:32,999 INFO [process] job=518e688c analyzing uploads\518e688c.wav
+2026-08-26 15:43:33,005 ERROR [process] job=518e688c FAILED: Error opening 'uploads\\518e688c.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\518e688c.wav': Format not recognised.
+2026-08-26 15:55:07,126 INFO [process] job=518e688c analyzing uploads\518e688c.wav
+2026-08-26 15:55:07,132 ERROR [process] job=518e688c FAILED: Error opening 'uploads\\518e688c.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\518e688c.wav': Format not recognised.
+2026-08-26 16:08:13,042 INFO [process] job=518e688c analyzing uploads\518e688c.wav
+2026-08-26 16:08:13,044 ERROR [process] job=518e688c FAILED: Error opening 'uploads\\518e688c.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\518e688c.wav': Format not recognised.
+2026-08-26 16:08:22,926 INFO [process] job=518e688c analyzing uploads\518e688c.wav
+2026-08-26 16:08:22,929 ERROR [process] job=518e688c FAILED: Error opening 'uploads\\518e688c.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\518e688c.wav': Format not recognised.
+2026-08-26 16:08:32,165 INFO [process] job=518e688c analyzing uploads\518e688c.wav
+2026-08-26 16:08:32,167 ERROR [process] job=518e688c FAILED: Error opening 'uploads\\518e688c.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\518e688c.wav': Format not recognised.
+2026-08-26 16:28:33,728 INFO [process] job=20e013e2 analyzing uploads\20e013e2.wav
+2026-08-26 16:28:33,735 ERROR [process] job=20e013e2 FAILED: Error opening 'uploads\\20e013e2.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\20e013e2.wav': Format not recognised.
+2026-08-26 16:30:30,526 INFO [process] job=20e013e2 analyzing uploads\20e013e2.wav
+2026-08-26 16:30:30,528 ERROR [process] job=20e013e2 FAILED: Error opening 'uploads\\20e013e2.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\20e013e2.wav': Format not recognised.
+2026-08-26 16:33:12,762 INFO [process] job=20e013e2 analyzing uploads\20e013e2.wav
+2026-08-26 16:33:12,784 ERROR [process] job=20e013e2 FAILED: Error opening 'uploads\\20e013e2.wav': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in process_audio
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 135, in <lambda>
+    analysis = await loop.run_in_executor(None, lambda: detect_key_and_scale(input_path))
+                                                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\pitch_detection.py", line 107, in detect_key_and_scale
+    y, sr = librosa.load(audio_path, sr=22050)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\20e013e2.wav': Format not recognised.
+2026-08-27 01:18:25,957 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-08-27 01:18:34,254 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-08-27 01:18:34,254 INFO [MusicGen] Generating: 'electronic dance music, heavy bass, energetic, 128 bpm' (30.0s)
+2026-08-27 01:19:38,028 INFO [MusicGen] Saved to outputs\d8a9bd35_generated.wav (30.0s)
+2026-08-27 02:00:50,159 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-08-27 02:00:50,159 INFO [Tunify] VRAM: 6.0 GB
+2026-08-27 02:01:04,483 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-08-27 02:01:11,899 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-08-27 02:01:13,989 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-08-27 02:01:13,990 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-08-27 02:01:13,990 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-08-28 17:44:55,327 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-08-28 17:44:55,328 INFO [Tunify] VRAM: 6.0 GB
+2026-08-28 17:47:18,507 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-08-28 17:47:34,827 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-08-28 17:47:39,220 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-08-28 17:47:39,221 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-08-28 17:47:39,221 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-06 13:50:29,733 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-06 13:50:29,734 INFO [Tunify] VRAM: 6.0 GB
+2026-09-06 13:51:09,419 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-06 13:51:17,569 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-06 13:51:19,692 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-06 13:51:19,693 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-06 13:51:19,693 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-06 13:52:28,696 INFO [MusicGen] Generating: 'electronic dance music, heavy bass, energetic, 128 bpm' (10.0s)
+2026-09-06 13:53:01,543 INFO [MusicGen] Saved to outputs\a902fa05_generated.wav (10.0s)
+2026-09-10 22:01:01,556 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-10 22:01:01,557 INFO [Tunify] VRAM: 6.0 GB
+2026-09-10 22:01:47,912 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-10 22:02:20,329 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-10 22:02:22,847 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-10 22:02:22,848 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-10 22:02:22,848 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-10 22:38:07,720 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-10 22:38:07,721 INFO [Tunify] VRAM: 6.0 GB
+2026-09-10 22:38:21,072 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-10 22:38:30,389 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-10 22:38:31,944 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-10 22:38:31,944 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-10 22:38:31,944 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-10 23:22:27,998 INFO [upload] job=e0ce9fab converted WebM to WAV
+2026-09-10 23:23:54,186 INFO [voice-swap] job=6313bf27 separating vocals from original
+2026-09-10 23:23:54,227 INFO [voice-swap] job=6313bf27 detecting key from original
+2026-09-10 23:24:01,988 INFO [voice-swap] job=6313bf27 key=C# major tempo=83.35433467741936
+2026-09-10 23:24:01,988 INFO [voice-swap] job=6313bf27 auto-tuning voice to C# major
+2026-09-10 23:24:07,909 INFO [voice-swap] job=fafd1666 separating vocals from original
+2026-09-10 23:24:07,942 INFO [voice-swap] job=fafd1666 detecting key from original
+2026-09-10 23:24:11,428 INFO [voice-swap] job=fafd1666 key=C# major tempo=83.35433467741936
+2026-09-10 23:24:11,428 INFO [voice-swap] job=fafd1666 auto-tuning voice to C# major
+2026-09-10 23:55:30,738 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-10 23:55:30,739 INFO [Tunify] VRAM: 6.0 GB
+2026-09-10 23:56:17,064 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-10 23:56:26,467 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-10 23:56:28,732 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-10 23:56:28,733 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-10 23:56:28,733 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 00:03:05,637 INFO [voice-swap] job=3ab83a6a separating vocals from original
+2026-09-11 00:03:05,673 INFO [voice-swap] job=3ab83a6a detecting key from original
+2026-09-11 00:03:13,322 INFO [voice-swap] job=3ab83a6a key=C# major tempo=83.35433467741936
+2026-09-11 00:03:13,322 INFO [voice-swap] job=3ab83a6a auto-tuning voice to C# major
+2026-09-11 00:03:13,332 ERROR [voice-swap] job=3ab83a6a FAILED: Error opening 'uploads\\3ab83a6a_voice.m4a': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 350, in voice_swap
+    tune_result = await loop.run_in_executor(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 352, in <lambda>
+    lambda: auto_tune(
+            ~~~~~~~~~^
+        input_path=voice_path,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        correction_strength=correction_strength,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "C:\Users\shrew\tunify\backend\src\ml\auto_tune.py", line 79, in auto_tune
+    y, sr = librosa.load(input_path, sr=44100, mono=True)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\3ab83a6a_voice.m4a': Format not recognised.
+2026-09-11 00:03:31,039 INFO [voice-swap] job=33f98ed7 separating vocals from original
+2026-09-11 00:03:31,071 INFO [voice-swap] job=33f98ed7 detecting key from original
+2026-09-11 00:03:34,622 INFO [voice-swap] job=33f98ed7 key=C# major tempo=83.35433467741936
+2026-09-11 00:03:34,623 INFO [voice-swap] job=33f98ed7 auto-tuning voice to C# major
+2026-09-11 00:03:34,631 ERROR [voice-swap] job=33f98ed7 FAILED: Error opening 'uploads\\33f98ed7_voice.m4a': Format not recognised.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 350, in voice_swap
+    tune_result = await loop.run_in_executor(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 352, in <lambda>
+    lambda: auto_tune(
+            ~~~~~~~~~^
+        input_path=voice_path,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        correction_strength=correction_strength,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "C:\Users\shrew\tunify\backend\src\ml\auto_tune.py", line 79, in auto_tune
+    y, sr = librosa.load(input_path, sr=44100, mono=True)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'uploads\\33f98ed7_voice.m4a': Format not recognised.
+2026-09-11 00:05:07,924 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 00:05:07,924 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 00:05:21,436 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 00:05:28,772 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 00:05:30,336 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 00:05:30,337 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 00:05:30,337 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 00:09:27,839 INFO [voice-swap] job=be288384 separating vocals from original
+2026-09-11 00:09:27,879 INFO [voice-swap] job=be288384 detecting key from original
+2026-09-11 00:09:34,893 INFO [voice-swap] job=be288384 key=C# major tempo=83.35433467741936
+2026-09-11 00:09:34,893 INFO [voice-swap] job=be288384 auto-tuning voice to C# major
+2026-09-11 00:09:56,056 INFO [voice-swap] job=be288384 auto-tune done in 30.7s
+2026-09-11 00:09:56,056 INFO [voice-swap] job=be288384 mixing voice with original backing
+2026-09-11 00:09:56,237 ERROR [voice-swap] job=be288384 FAILED: Error opening 'outputs\\be288384\\htdemucs\\be288384_orig\\no_vocals.wav': System error.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 390, in voice_swap
+    await loop.run_in_executor(None, _do_mix)
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 373, in _do_mix
+    backing, _ = load_and_resample(original_backing_path, target_sr=44100)
+                 ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\mixer.py", line 9, in load_and_resample
+    y, sr = librosa.load(audio_path, sr=target_sr, mono=True)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'outputs\\be288384\\htdemucs\\be288384_orig\\no_vocals.wav': System error.
+2026-09-11 00:10:04,216 INFO [voice-swap] job=f416757d separating vocals from original
+2026-09-11 00:10:04,249 INFO [voice-swap] job=f416757d detecting key from original
+2026-09-11 00:10:07,659 INFO [voice-swap] job=f416757d key=C# major tempo=83.35433467741936
+2026-09-11 00:10:07,659 INFO [voice-swap] job=f416757d auto-tuning voice to C# major
+2026-09-11 00:10:31,578 INFO [voice-swap] job=f416757d auto-tune done in 27.9s
+2026-09-11 00:10:31,578 INFO [voice-swap] job=f416757d mixing voice with original backing
+2026-09-11 00:10:31,760 ERROR [voice-swap] job=f416757d FAILED: Error opening 'outputs\\f416757d\\htdemucs\\f416757d_orig\\no_vocals.wav': System error.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 390, in voice_swap
+    await loop.run_in_executor(None, _do_mix)
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 373, in _do_mix
+    backing, _ = load_and_resample(original_backing_path, target_sr=44100)
+                 ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\mixer.py", line 9, in load_and_resample
+    y, sr = librosa.load(audio_path, sr=target_sr, mono=True)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'outputs\\f416757d\\htdemucs\\f416757d_orig\\no_vocals.wav': System error.
+2026-09-11 00:15:10,396 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 00:15:10,397 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 00:15:21,792 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 00:15:28,914 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 00:15:30,461 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 00:15:30,462 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 00:15:30,462 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 00:17:12,340 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 00:17:12,341 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 00:17:18,524 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 00:17:24,462 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 00:17:25,299 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 00:17:25,299 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 00:17:25,299 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 00:17:53,364 INFO [voice-swap] job=e116f9c6 orig=.mp3 voice=.m4a converted to wav
+2026-09-11 00:17:53,364 INFO [voice-swap] job=e116f9c6 separating vocals from original
+2026-09-11 00:17:53,403 INFO [voice-swap] job=e116f9c6 detecting key from original
+2026-09-11 00:18:00,187 INFO [voice-swap] job=e116f9c6 key=C# major tempo=83.35433467741936
+2026-09-11 00:18:00,187 INFO [voice-swap] job=e116f9c6 auto-tuning voice to C# major
+2026-09-11 00:18:23,433 INFO [voice-swap] job=e116f9c6 auto-tune done in 31.1s
+2026-09-11 00:18:23,433 INFO [voice-swap] job=e116f9c6 mixing voice with original backing
+2026-09-11 00:18:23,587 ERROR [voice-swap] job=e116f9c6 FAILED: Error opening 'outputs\\e116f9c6\\htdemucs\\e116f9c6_orig\\no_vocals.wav': System error.
+Traceback (most recent call last):
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 398, in voice_swap
+    await loop.run_in_executor(None, _do_mix)
+  File "C:\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\shrew\tunify\backend\src\routes\audio.py", line 381, in _do_mix
+    backing, _ = load_and_resample(original_backing_path, target_sr=44100)
+                 ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\src\ml\mixer.py", line 9, in load_and_resample
+    y, sr = librosa.load(audio_path, sr=target_sr, mono=True)
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 156, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\librosa\core\audio.py", line 179, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 708, in __init__
+    self._file = self._open(file, mode_int, closefd)
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shrew\tunify\backend\venv\Lib\site-packages\soundfile.py", line 1296, in _open
+    raise LibsndfileError(err, prefix=f"Error opening {self.name!r}: ")
+soundfile.LibsndfileError: Error opening 'outputs\\e116f9c6\\htdemucs\\e116f9c6_orig\\no_vocals.wav': System error.
+2026-09-11 00:25:23,540 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 00:25:23,541 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 00:25:38,008 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 00:25:45,199 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 00:25:46,909 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 00:25:46,910 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 00:25:46,910 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 00:30:29,247 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 00:30:29,250 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 00:30:41,274 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 00:30:48,151 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 00:30:49,758 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 00:30:49,758 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 00:30:49,758 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 00:33:00,846 INFO [voice-swap] job=ce18c832 orig=.mp3 voice=.m4a converted to wav
+2026-09-11 00:33:00,846 INFO [voice-swap] job=ce18c832 separating vocals from original
+2026-09-11 00:33:00,879 ERROR demucs failed (rc=1): C:\Python313\python.exe: No module named demucs
+
