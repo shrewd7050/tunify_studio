@@ -11,6 +11,7 @@ import {
   FlatList,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 import WaveformEditor from "../components/WaveformEditor";
 import { useEditHistory } from "../hooks/useEditHistory";
 import {
@@ -70,6 +71,25 @@ export default function StudioScreen({ route, navigation }) {
   const timerRef = useRef(null);
   const { pushState, undo, redo, canUndo, canRedo, clear } = useEditHistory(50);
 
+  const pickFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true });
+      if (result.canceled || !result.assets?.length) return;
+      const file = result.assets[0];
+      setProcessing(true);
+      try {
+        const uploadResult = await uploadAudio(file.uri, file.name);
+        setJobId(uploadResult.job_id);
+      } catch (err) {
+        Alert.alert("Upload failed", err.message || "Could not upload file");
+      } finally {
+        setProcessing(false);
+      }
+    } catch (err) {
+      Alert.alert("Error", "Failed to pick file: " + err.message);
+    }
+  };
+
   useEffect(() => {
     if (jobId) loadWaveform(jobId);
     return () => {
@@ -80,7 +100,8 @@ export default function StudioScreen({ route, navigation }) {
 
   const loadWaveform = async (jid) => {
     try {
-      const resp = await fetch(`${API_BASE}/api/audio/editor/waveform/${jid}?num_points=2000`);
+      const url = getAudioUrl(`/api/audio/editor/waveform/${jid}?num_points=2000`);
+      const resp = await fetch(url);
       const data = await resp.json();
       if (data.success) {
         setWaveform(data.waveform);
@@ -352,6 +373,23 @@ export default function StudioScreen({ route, navigation }) {
         </View>
       )}
 
+      {!jobId && !processing && (
+        <TouchableOpacity style={s.uploadCard} onPress={pickFile} activeOpacity={0.7}>
+          <View style={s.uploadIcon}>
+            <MaterialIcons name="cloud-upload" size={36} color="#A855F7" />
+          </View>
+          <Text style={s.uploadTitle}>Upload Audio to Edit</Text>
+          <Text style={s.uploadDesc}>Tap to pick any audio file — mp3, wav, m4a, aac, or even video</Text>
+        </TouchableOpacity>
+      )}
+
+      {processing && !jobId && (
+        <View style={s.uploadCard}>
+          <ActivityIndicator size="large" color="#A855F7" />
+          <Text style={[s.uploadTitle, { marginTop: 12 }]}>Uploading...</Text>
+        </View>
+      )}
+
       <WaveformEditor
         waveform={waveform}
         duration={duration}
@@ -527,6 +565,10 @@ const s = StyleSheet.create({
   historyText: { color: "#A855F7", fontSize: 12, fontWeight: "700" },
   historyTextDisabled: { color: "#4B5563" },
   editCount: { color: "#6B7280", fontSize: 12, marginLeft: "auto" },
+  uploadCard: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 24, borderRadius: 20, backgroundColor: "rgba(168, 85, 247, 0.05)", borderWidth: 1, borderColor: "rgba(168, 85, 247, 0.15)", borderStyle: "dashed", marginBottom: 16 },
+  uploadIcon: { width: 72, height: 72, borderRadius: 20, backgroundColor: "rgba(168, 85, 247, 0.1)", justifyContent: "center", alignItems: "center", marginBottom: 14 },
+  uploadTitle: { color: "#E5E7EB", fontSize: 16, fontWeight: "800", marginBottom: 6 },
+  uploadDesc: { color: "#6B7280", fontSize: 12, textAlign: "center", lineHeight: 18 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
   modalContent: { backgroundColor: "#0a0a12", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: "60%" },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
