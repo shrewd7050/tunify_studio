@@ -32,9 +32,9 @@ export default function VoiceSwapScreen({ navigation }) {
   const STEPS = [
     "Uploading your files...",
     "Separating vocals from original song...",
-    "Detecting key & tempo...",
-    "Auto-tuning your voice...",
-    "Mixing your voice with original backing...",
+    "Analyzing melodies & finding match...",
+    "Aligning & correcting pitch...",
+    "Mixing final result...",
   ];
 
   useEffect(() => { loadFiles(); }, []);
@@ -257,6 +257,27 @@ export default function VoiceSwapScreen({ navigation }) {
             <Text style={localStyles.statLabel}>Time</Text>
           </View>
         </View>
+
+        {result.match_confidence !== undefined && (
+          <View style={localStyles.matchInfo}>
+            <View style={localStyles.matchRow}>
+              <MaterialIcons name={result.match_confidence >= 0.7 ? "check-circle" : result.match_confidence >= 0.4 ? "warning" : "error"} size={16} color={result.match_confidence >= 0.7 ? "#22C55E" : result.match_confidence >= 0.4 ? "#F59E0B" : "#F43F5E"} />
+              <Text style={[localStyles.matchText, { color: result.match_confidence >= 0.7 ? "#22C55E" : result.match_confidence >= 0.4 ? "#F59E0B" : "#F43F5E" }]}>
+                Match: {(result.match_confidence * 100).toFixed(0)}%
+              </Text>
+            </View>
+            {result.original_start !== undefined && result.original_end !== undefined && (
+              <Text style={localStyles.matchSection}>
+                Original section: {formatTime(result.original_start)} → {formatTime(result.original_end)}
+              </Text>
+            )}
+            {result.pipeline === "global_key_fallback" && (
+              <Text style={[localStyles.matchSection, { color: "#F59E0B" }]}>
+                Low confidence — used fallback auto-tune
+              </Text>
+            )}
+          </View>
+        )}
 
         <Text style={[styles.settingsLabel, { marginTop: 24 }]}>Results</Text>
 
@@ -496,6 +517,11 @@ const localStyles = StyleSheet.create({
   },
   statValue: { color: "#E5E7EB", fontSize: 18, fontWeight: "800" },
   statLabel: { color: "#6B7280", fontSize: 11, marginTop: 4, fontWeight: "600" },
+
+  matchInfo: { marginTop: 12, padding: 12, backgroundColor: "rgba(168, 85, 247, 0.06)", borderRadius: 12, borderWidth: 1, borderColor: "rgba(168, 85, 247, 0.12)" },
+  matchRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  matchText: { fontSize: 13, fontWeight: "700" },
+  matchSection: { color: "#9CA3AF", fontSize: 11, marginTop: 4, fontFamily: "monospace" },
 
   resultCard: {
     flexDirection: "row", alignItems: "center", gap: 14, padding: 16, marginBottom: 10,
