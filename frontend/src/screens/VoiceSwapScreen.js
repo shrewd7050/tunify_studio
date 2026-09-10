@@ -25,6 +25,8 @@ export default function VoiceSwapScreen({ navigation }) {
   const [result, setResult] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [savedFiles, setSavedFiles] = useState([]);
+  const [playingUrl, setPlayingUrl] = useState(null);
+  const soundRef = useRef(null);
   const timerRef = useRef(null);
 
   const STEPS = [
@@ -37,7 +39,10 @@ export default function VoiceSwapScreen({ navigation }) {
 
   useEffect(() => { loadFiles(); }, []);
   useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (soundRef.current) { soundRef.current.unloadAsync().catch(() => {}); soundRef.current = null; }
+    };
   }, []);
 
   const loadFiles = async () => {
@@ -103,6 +108,7 @@ export default function VoiceSwapScreen({ navigation }) {
   };
 
   const cancelRef = useRef(false);
+  const abortRef = useRef(null);
 
   const handleSwap = async () => {
     if (!originalFile || !voiceFile) {
@@ -110,6 +116,7 @@ export default function VoiceSwapScreen({ navigation }) {
       return;
     }
     cancelRef.current = false;
+    abortRef.current = new AbortController();
     setProcessing(true);
     setElapsed(0);
     setCurrentStep(0);
@@ -121,13 +128,14 @@ export default function VoiceSwapScreen({ navigation }) {
       const swapResult = await voiceSwap(
         originalFile.uri, originalFile.name,
         voiceFile.uri, voiceFile.name,
+        { signal: abortRef.current.signal },
       );
       if (cancelRef.current) return;
       setCurrentStep(5);
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
       setResult(swapResult);
     } catch (err) {
-      if (cancelRef.current) return;
+      if (cancelRef.current || err?.name === "CanceledError" || err?.name === "AbortError") return;
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
       const msg = err?.response?.data?.detail || err?.message || "Something went wrong";
       Alert.alert("Voice Swap Failed", msg);
@@ -146,6 +154,7 @@ export default function VoiceSwapScreen({ navigation }) {
           style: "destructive",
           onPress: () => {
             cancelRef.current = true;
+            if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
             if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
             setProcessing(false);
           },
@@ -155,12 +164,33 @@ export default function VoiceSwapScreen({ navigation }) {
   };
 
   const playResult = async (url) => {
+    const fullUrl = getAudioUrl(url);
+    if (playingUrl === url && soundRef.current) {
+      try { await soundRef.current.pauseAsync(); } catch (_) {}
+      setPlayingUrl(null);
+      soundRef.current = null;
+      return;
+    }
+    if (soundRef.current) {
+      try { await soundRef.current.unloadAsync(); } catch (_) {}
+      soundRef.current = null;
+    }
     try {
-      const fullUrl = getAudioUrl(url);
-      const player = await createAudioPlayer(fullUrl);
-      await player.play();
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: fullUrl },
+        { shouldPlay: true },
+        (status) => {
+          if (status.didJustFinish) {
+            setPlayingUrl(null);
+            soundRef.current = null;
+          }
+        }
+      );
+      soundRef.current = sound;
+      setPlayingUrl(url);
     } catch (err) {
       Alert.alert("Playback Error", "Could not play audio.");
+      setPlayingUrl(null);
     }
   };
 
@@ -237,7 +267,7 @@ export default function VoiceSwapScreen({ navigation }) {
             <Text style={localStyles.resultTitle}>Voice Swap Mix</Text>
             <Text style={localStyles.resultDesc}>Your voice + original backing track</Text>
           </View>
-          <MaterialIcons name="play-circle-filled" size={32} color="#F43F5E" />
+          <MaterialIcons name={playingUrl === result.voice_swapped_url ? "pause-circle-filled" : "play-circle-filled"} size={32} color="#F43F5E" />
         </TouchableOpacity>
 
         <TouchableOpacity style={localStyles.resultCard} onPress={() => playResult(result.tuned_voice_url)}>
@@ -248,7 +278,7 @@ export default function VoiceSwapScreen({ navigation }) {
             <Text style={localStyles.resultTitle}>Your Auto-Tuned Voice</Text>
             <Text style={localStyles.resultDesc}>Your voice tuned to match the song</Text>
           </View>
-          <MaterialIcons name="play-circle-filled" size={32} color="#A855F7" />
+          <MaterialIcons name={playingUrl === result.tuned_voice_url ? "pause-circle-filled" : "play-circle-filled"} size={32} color="#A855F7" />
         </TouchableOpacity>
 
         <TouchableOpacity style={localStyles.resultCard} onPress={() => playResult(result.original_backing_url)}>
@@ -259,7 +289,7 @@ export default function VoiceSwapScreen({ navigation }) {
             <Text style={localStyles.resultTitle}>Original Backing Track</Text>
             <Text style={localStyles.resultDesc}>Instrumental from the original song</Text>
           </View>
-          <MaterialIcons name="play-circle-filled" size={32} color="#06B6D4" />
+          <MaterialIcons name={playingUrl === result.original_backing_url ? "pause-circle-filled" : "play-circle-filled"} size={32} color="#06B6D4" />
         </TouchableOpacity>
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 24 }}>
@@ -278,6 +308,13 @@ export default function VoiceSwapScreen({ navigation }) {
             <Text style={[localStyles.downloadBtnText, { color: "#A855F7" }]}>Download Voice</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          style={[localStyles.downloadBtn, { flexDirection: "row", marginTop: 10, backgroundColor: "rgba(6, 182, 212, 0.15)" }]}
+          onPress={() => downloadFile(result.original_backing_url)}
+        >
+          <MaterialIcons name="download" size={18} color="#06B6D4" />
+          <Text style={[localStyles.downloadBtnText, { color: "#06B6D4" }]}>Download Backing Track</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 16, marginTop: 12 }}
