@@ -133,6 +133,7 @@ export default function VoiceSwapScreen({ navigation }) {
       if (cancelRef.current) return;
       setCurrentStep(5);
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+      setProcessing(false);
       setResult(swapResult);
     } catch (err) {
       if (cancelRef.current || err?.name === "CanceledError" || err?.name === "AbortError") return;
@@ -269,6 +270,13 @@ export default function VoiceSwapScreen({ navigation }) {
           </View>
           <MaterialIcons name={playingUrl === result.voice_swapped_url ? "pause-circle-filled" : "play-circle-filled"} size={32} color="#F43F5E" />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={localStyles.editBtn}
+          onPress={() => navigation.navigate("Studio", { uri: getAudioUrl(result.voice_swapped_url), filename: "voice_swap_mix.wav" })}
+        >
+          <MaterialIcons name="edit" size={16} color="#A855F7" />
+          <Text style={localStyles.editBtnText}>Edit in Studio</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={localStyles.resultCard} onPress={() => playResult(result.tuned_voice_url)}>
           <View style={localStyles.resultIcon}>
@@ -280,6 +288,13 @@ export default function VoiceSwapScreen({ navigation }) {
           </View>
           <MaterialIcons name={playingUrl === result.tuned_voice_url ? "pause-circle-filled" : "play-circle-filled"} size={32} color="#A855F7" />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={localStyles.editBtn}
+          onPress={() => navigation.navigate("Studio", { uri: getAudioUrl(result.tuned_voice_url), filename: "auto_tuned_voice.wav" })}
+        >
+          <MaterialIcons name="edit" size={16} color="#A855F7" />
+          <Text style={localStyles.editBtnText}>Edit in Studio</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={localStyles.resultCard} onPress={() => playResult(result.original_backing_url)}>
           <View style={localStyles.resultIcon}>
@@ -290,6 +305,13 @@ export default function VoiceSwapScreen({ navigation }) {
             <Text style={localStyles.resultDesc}>Instrumental from the original song</Text>
           </View>
           <MaterialIcons name={playingUrl === result.original_backing_url ? "pause-circle-filled" : "play-circle-filled"} size={32} color="#06B6D4" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={localStyles.editBtn}
+          onPress={() => navigation.navigate("Studio", { uri: getAudioUrl(result.original_backing_url), filename: "backing_track.wav" })}
+        >
+          <MaterialIcons name="edit" size={16} color="#A855F7" />
+          <Text style={localStyles.editBtnText}>Edit in Studio</Text>
         </TouchableOpacity>
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 24 }}>
@@ -483,6 +505,9 @@ const localStyles = StyleSheet.create({
   resultIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: "rgba(244, 63, 94, 0.12)", justifyContent: "center", alignItems: "center" },
   resultTitle: { color: "#E5E7EB", fontSize: 14, fontWeight: "700" },
   resultDesc: { color: "#6B7280", fontSize: 11, marginTop: 2 },
+
+  editBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 8, marginTop: -4, marginBottom: 10 },
+  editBtnText: { color: "#A855F7", fontSize: 12, fontWeight: "700" },
 
   downloadBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
