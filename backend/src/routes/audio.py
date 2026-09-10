@@ -407,7 +407,7 @@ async def voice_swap(
             "duration": tune_result["duration"],
             "processing_time": round(time.time() - t0, 1),
             "voice_swapped_url": f"/outputs/{job_id}_voice_swap.wav",
-            "original_backing_url": f"/outputs/{job_id}_orig/htdemucs/{Path(orig_path).stem}/no_vocals.wav",
+            "original_backing_url": f"/outputs/{job_id}/htdemucs/{Path(orig_path).stem}/no_vocals.wav",
             "tuned_voice_url": f"/outputs/{job_id}_voice_tuned.wav",
         }
 

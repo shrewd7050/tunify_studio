@@ -559,3 +559,63 @@ soundfile.LibsndfileError: Error opening 'outputs\\e116f9c6\\htdemucs\\e116f9c6_
 2026-09-11 00:33:00,846 INFO [voice-swap] job=ce18c832 separating vocals from original
 2026-09-11 00:33:00,879 ERROR demucs failed (rc=1): C:\Python313\python.exe: No module named demucs
 
+2026-09-11 00:33:27,426 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 00:33:27,427 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 00:33:33,380 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 00:33:39,158 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 00:33:39,952 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 00:33:39,952 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 00:33:39,952 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 00:52:50,947 INFO [voice-swap] job=d0e106a1 orig=.m4a voice=.aac converted to wav
+2026-09-11 00:52:50,947 INFO [voice-swap] job=d0e106a1 separating vocals from original
+2026-09-11 00:52:50,988 ERROR demucs failed (rc=1): C:\Python313\python.exe: No module named demucs
+
+2026-09-11 00:58:00,498 INFO [voice-swap] job=489064fb orig=.m4a voice=.aac converted to wav
+2026-09-11 00:58:00,498 INFO [voice-swap] job=489064fb separating vocals from original
+2026-09-11 00:58:00,538 ERROR demucs failed (rc=1): C:\Python313\python.exe: No module named demucs
+
+2026-09-11 01:04:03,783 INFO [voice-swap] job=112a4d73 orig=.m4a voice=.aac converted to wav
+2026-09-11 01:04:03,784 INFO [voice-swap] job=112a4d73 separating vocals from original
+2026-09-11 01:04:07,067 ERROR demucs failed (rc=1): C:\Python313\Lib\site-packages\torch\_subclasses\functional_tensor.py:368: UserWarning: Failed to initialize NumPy: No module named 'numpy' (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:84.)
+  cpu = _conversion_method_template(device=torch.device("cpu"))
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Python313\Lib\site-packages\demucs\__main
+2026-09-11 01:04:25,025 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 01:04:25,026 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 01:04:38,299 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 01:04:45,868 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 01:04:46,912 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 01:04:46,912 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 01:04:46,912 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 01:04:58,254 INFO [voice-swap] job=f5a942bb orig=.m4a voice=.aac converted to wav
+2026-09-11 01:04:58,255 INFO [voice-swap] job=f5a942bb separating vocals from original
+2026-09-11 01:05:00,289 ERROR demucs failed (rc=1): C:\Python313\Lib\site-packages\torch\_subclasses\functional_tensor.py:368: UserWarning: Failed to initialize NumPy: No module named 'numpy' (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:84.)
+  cpu = _conversion_method_template(device=torch.device("cpu"))
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Python313\Lib\site-packages\demucs\__main
+2026-09-11 01:08:37,571 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 01:08:37,572 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 01:08:43,184 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 01:08:50,434 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 01:08:52,199 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 01:08:52,200 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 01:08:52,200 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-11 01:09:04,311 INFO [voice-swap] job=25bd0fde orig=.m4a voice=.aac converted to wav
+2026-09-11 01:09:04,311 INFO [voice-swap] job=25bd0fde separating vocals from original
+2026-09-11 01:11:45,554 INFO [voice-swap] job=25bd0fde detecting key from original
+2026-09-11 01:11:52,314 INFO [voice-swap] job=25bd0fde key=C# major tempo=83.35433467741936
+2026-09-11 01:11:52,315 INFO [voice-swap] job=25bd0fde auto-tuning voice to C# major
+2026-09-11 01:11:56,821 INFO [voice-swap] job=25bd0fde auto-tune done in 173.3s
+2026-09-11 01:11:56,821 INFO [voice-swap] job=25bd0fde mixing voice with original backing
+2026-09-11 01:12:02,894 INFO [voice-swap] job=25bd0fde done in 179.3s
+2026-09-11 01:38:52,576 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-11 01:38:52,577 INFO [Tunify] VRAM: 6.0 GB
+2026-09-11 01:39:06,981 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-11 01:39:15,453 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-11 01:39:17,362 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-11 01:39:17,363 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-11 01:39:17,363 INFO [Tunify] MusicGen model pre-warmed successfully

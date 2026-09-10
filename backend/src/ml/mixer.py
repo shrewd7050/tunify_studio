@@ -242,7 +242,7 @@ def separate_vocals(audio_path: str, output_dir: str) -> dict:
             "--two-stems", "vocals",
             audio_path,
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
 
         if result.returncode != 0:
             logger.error(f"demucs failed (rc={result.returncode}): {result.stderr[:500]}")
