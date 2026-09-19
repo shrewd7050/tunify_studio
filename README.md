@@ -1,4 +1,4 @@
-# Tunify
+# Tunify (Under development)
 
 AI-powered auto-tune and music generation app. Sing a song, and Tunify will auto-tune your voice and generate an AI backing track.
 
