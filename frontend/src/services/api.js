@@ -164,6 +164,7 @@ export async function voiceSwap(originalUri, originalName, voiceUri, voiceName, 
     formData.append("voice", { uri: voiceUri, name: voiceName, type: type2 });
   }
   formData.append("correction_strength", String(options.correction_strength ?? 0.8));
+  formData.append("pitch_shift", String(options.pitch_shift ?? 0));
 
   const { data } = await api.post("/api/audio/voice-swap", formData, { timeout: 600000, signal: options.signal });
   return data;

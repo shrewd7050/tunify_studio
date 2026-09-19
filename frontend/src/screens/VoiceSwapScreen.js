@@ -26,14 +26,16 @@ export default function VoiceSwapScreen({ navigation }) {
   const [elapsed, setElapsed] = useState(0);
   const [savedFiles, setSavedFiles] = useState([]);
   const [playingUrl, setPlayingUrl] = useState(null);
+  const [pitchShift, setPitchShift] = useState(0);
   const soundRef = useRef(null);
   const timerRef = useRef(null);
 
   const STEPS = [
     "Uploading your files...",
     "Separating vocals from original song...",
-    "Analyzing melodies & finding match...",
-    "Aligning & correcting pitch...",
+    "Matching your phrase to the song (MFCC+DTW)...",
+    "Converting voice & aligning pitch...",
+    "Scaling pitch (lows/mids/highs)...",
     "Mixing final result...",
   ];
 
@@ -128,7 +130,7 @@ export default function VoiceSwapScreen({ navigation }) {
       const swapResult = await voiceSwap(
         originalFile.uri, originalFile.name,
         voiceFile.uri, voiceFile.name,
-        { signal: abortRef.current.signal },
+        { signal: abortRef.current.signal, pitch_shift: pitchShift },
       );
       if (cancelRef.current) return;
       setCurrentStep(5);
@@ -273,7 +275,12 @@ export default function VoiceSwapScreen({ navigation }) {
             )}
             {result.pipeline === "global_key_fallback" && (
               <Text style={[localStyles.matchSection, { color: "#F59E0B" }]}>
-                Low confidence — used fallback auto-tune
+                Low confidence - used fallback auto-tune
+              </Text>
+            )}
+            {result.pipeline === "melody_match_rvc" && (
+              <Text style={[localStyles.matchSection, { color: "#22C55E" }]}>
+                RVC voice conversion + melody match pipeline
               </Text>
             )}
           </View>
@@ -442,13 +449,57 @@ export default function VoiceSwapScreen({ navigation }) {
           <View style={[localStyles.howNum, { backgroundColor: "rgba(168, 85, 247, 0.2)" }]}>
             <Text style={[localStyles.howNumText, { color: "#A855F7" }]}>2</Text>
           </View>
-          <Text style={localStyles.howText}>Your voice is auto-tuned to match the song's key</Text>
+          <Text style={localStyles.howText}>MFCC+DTW matches your phrase to the song section</Text>
         </View>
         <View style={localStyles.howStep}>
           <View style={[localStyles.howNum, { backgroundColor: "rgba(244, 63, 94, 0.2)" }]}>
             <Text style={[localStyles.howNumText, { color: "#F43F5E" }]}>3</Text>
           </View>
-          <Text style={localStyles.howText}>Your voice is mixed with the original backing track</Text>
+          <Text style={localStyles.howText}>Voice timbre converted & pitch scaled (lows/mids/highs)</Text>
+        </View>
+        <View style={localStyles.howStep}>
+          <View style={[localStyles.howNum, { backgroundColor: "rgba(34, 197, 94, 0.2)" }]}>
+            <Text style={[localStyles.howNumText, { color: "#22C55E" }]}>4</Text>
+          </View>
+          <Text style={localStyles.howText}>Mixed with beat-aware backing & professional mastering</Text>
+        </View>
+      </View>
+
+      {/* PITCH SHIFT */}
+      <View style={localStyles.pitchSection}>
+        <View style={localStyles.pitchHeader}>
+          <MaterialIcons name="tune" size={14} color="#A855F7" />
+          <Text style={[styles.settingsLabel, { marginTop: 0, marginBottom: 0 }]}>
+            Pitch Shift: {pitchShift > 0 ? `+${pitchShift}` : pitchShift} semitones
+          </Text>
+        </View>
+        <Text style={localStyles.pitchDesc}>Adjust if your voice is higher or lower than the original singer</Text>
+        <View style={localStyles.pitchRow}>
+          <TouchableOpacity
+            style={localStyles.pitchBtn}
+            onPress={() => setPitchShift(Math.max(-6, pitchShift - 1))}
+          >
+            <MaterialIcons name="remove" size={18} color="#A855F7" />
+          </TouchableOpacity>
+          <View style={localStyles.pitchTrack}>
+            {[-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6].map(v => (
+              <TouchableOpacity
+                key={v}
+                onPress={() => setPitchShift(v)}
+                style={[
+                  localStyles.pitchDot,
+                  v === pitchShift && localStyles.pitchDotActive,
+                  v === 0 && localStyles.pitchDotZero,
+                ]}
+              />
+            ))}
+          </View>
+          <TouchableOpacity
+            style={localStyles.pitchBtn}
+            onPress={() => setPitchShift(Math.min(6, pitchShift + 1))}
+          >
+            <MaterialIcons name="add" size={18} color="#A855F7" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -491,6 +542,29 @@ const localStyles = StyleSheet.create({
   howNum: { width: 28, height: 28, borderRadius: 14, justifyContent: "center", alignItems: "center" },
   howNumText: { fontSize: 13, fontWeight: "800" },
   howText: { color: "#9CA3AF", fontSize: 12, flex: 1 },
+
+  pitchSection: {
+    marginTop: 20, padding: 16, backgroundColor: "rgba(168, 85, 247, 0.04)",
+    borderRadius: 16, borderWidth: 1, borderColor: "rgba(168, 85, 247, 0.08)",
+  },
+  pitchHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  pitchDesc: { color: "#6B7280", fontSize: 11, marginTop: 6, marginBottom: 12 },
+  pitchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  pitchBtn: {
+    width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center",
+    backgroundColor: "rgba(168, 85, 247, 0.12)", borderWidth: 1, borderColor: "rgba(168, 85, 247, 0.25)",
+  },
+  pitchTrack: { flex: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  pitchDot: {
+    width: 10, height: 10, borderRadius: 5, backgroundColor: "rgba(168, 85, 247, 0.2)",
+  },
+  pitchDotActive: {
+    backgroundColor: "#A855F7", width: 14, height: 14, borderRadius: 7,
+    shadowColor: "#A855F7", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6,
+  },
+  pitchDotZero: {
+    backgroundColor: "rgba(168, 85, 247, 0.4)",
+  },
 
   processBtn: {
     backgroundColor: "#F43F5E", borderRadius: 16, paddingVertical: 18,
