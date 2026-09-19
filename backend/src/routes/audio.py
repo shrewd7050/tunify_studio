@@ -71,6 +71,12 @@ def _convert_to_wav(input_path: Path, output_path: Path) -> None:
     audio.export(str(output_path), format="wav")
 
 
+def _convert_wav_to_mp3(wav_path: Path, mp3_path: Path, bitrate: str = "192k") -> None:
+    """Convert WAV to MP3 using pydub + ffmpeg."""
+    audio = AudioSegment.from_wav(str(wav_path))
+    audio.export(str(mp3_path), format="mp3", bitrate=bitrate)
+
+
 @router.post("/upload")
 async def upload_audio(file: UploadFile = File(...)):
     """Upload an audio file for processing."""
@@ -302,8 +308,9 @@ async def voice_swap(
     original: UploadFile = File(...),
     voice: UploadFile = File(...),
     correction_strength: float = Form(0.8),
+    pitch_shift: float = Form(0.0),
 ):
-    """Swap vocals: separate backing, match melody phrase, align, pitch-correct, mix."""
+    """Voice swap pipeline: separate, match, convert, stretch, pitch-correct, mix."""
     from src.ml.mixer import load_and_resample, align_lengths, normalize_audio, _apply_multiband_processing, separate_vocals
     from src.ml.pitch_detection import detect_key_and_scale
     from src.ml.vocal_match import (
@@ -367,14 +374,14 @@ async def voice_swap(
         logger.info(f"[voice-swap] job={job_id} demucs done ({time.time()-t_stage:.1f}s)")
 
         # ------------------------------------------------------------------
-        # 2. Detect global key (metadata + fallback)
+        # 2. Detect global key
         # ------------------------------------------------------------------
         key_info = await loop.run_in_executor(None, lambda: detect_key_and_scale(orig_path))
         key, scale, tempo = key_info["key"], key_info["scale"], key_info.get("tempo")
         logger.info(f"[voice-swap] job={job_id} key={key} {scale} tempo={tempo:.0f}")
 
         # ------------------------------------------------------------------
-        # 3. Match vocal phrases
+        # 3. Match vocal phrases (MFCC+DTW + chroma + contour)
         # ------------------------------------------------------------------
         t_stage = time.time()
         logger.info(f"[voice-swap] job={job_id} matching vocal phrases")
@@ -387,19 +394,19 @@ async def voice_swap(
             f"({time.time()-t_stage:.1f}s)"
         )
 
-        use_new_pipeline = match["success"] and match["confidence"] >= 0.3
+        use_new_pipeline = match["success"] and match["confidence"] >= 0.15
 
         if use_new_pipeline:
             # ==============================================================
-            # NEW PIPELINE: melody-matched voice swap
+            # MELODY-MATCHED PIPELINE: RVC + beat-aware + freq-dep pitch
             # ==============================================================
             matched_start = match["original_start"]
             matched_end = match["original_end"]
 
-            # 4a. Extract matched backing section
+            # 4a. Extract matched backing section (beat-aware)
             t_stage = time.time()
             matched_backing_path = str(OUTPUT_DIR / f"{job_id}_matched_backing.wav")
-            logger.info(f"[voice-swap] job={job_id} extracting backing section {matched_start:.1f}s–{matched_end:.1f}s")
+            logger.info(f"[voice-swap] job={job_id} extracting backing section {matched_start:.1f}s-{matched_end:.1f}s")
             backing_sec = await loop.run_in_executor(
                 None,
                 lambda: extract_backing_section(
@@ -409,16 +416,38 @@ async def voice_swap(
             target_duration = backing_sec["duration"]
             logger.info(f"[voice-swap] job={job_id} backing section: {target_duration:.1f}s ({time.time()-t_stage:.1f}s)")
 
-            # 4b. Time-stretch user vocal to match
+            # 4b. Voice conversion via RVC (converts timbre + preserves melody)
+            t_stage = time.time()
+            converted_path = str(OUTPUT_DIR / f"{job_id}_converted.wav")
+            logger.info(f"[voice-swap] job={job_id} RVC voice conversion")
+            try:
+                from src.ml.voice_convert import convert_voice
+                conv_result = await loop.run_in_executor(
+                    None,
+                    lambda: convert_voice(
+                        input_path=voice_path,
+                        output_path=converted_path,
+                        pitch_shift=int(pitch_shift) if pitch_shift else 0,
+                        index_rate=0.5,
+                        protect=0.33,
+                    ),
+                )
+                voice_to_use = converted_path if conv_result["success"] else voice_path
+                logger.info(f"[voice-swap] job={job_id} voice conversion: {conv_result.get('method', 'unknown')} ({time.time()-t_stage:.1f}s)")
+            except Exception as vc_err:
+                logger.warning(f"[voice-swap] job={job_id} RVC failed: {vc_err}, using original voice")
+                voice_to_use = voice_path
+
+            # 4c. Time-stretch converted voice (phase vocoder)
             t_stage = time.time()
             stretched_path = str(OUTPUT_DIR / f"{job_id}_stretched.wav")
-            logger.info(f"[voice-swap] job={job_id} time-stretching user vocal")
+            logger.info(f"[voice-swap] job={job_id} time-stretching voice")
             stretch = await loop.run_in_executor(
-                None, lambda: time_stretch_vocal(voice_path, stretched_path, target_duration)
+                None, lambda: time_stretch_vocal(voice_to_use, stretched_path, target_duration)
             )
             logger.info(f"[voice-swap] job={job_id} stretch done ({time.time()-t_stage:.1f}s)")
 
-            # 4c. Extract target melody from matched section
+            # 4d. Extract target melody from matched section
             t_stage = time.time()
             logger.info(f"[voice-swap] job={job_id} extracting target melody for section")
             orig_melody = await loop.run_in_executor(
@@ -428,7 +457,6 @@ async def voice_swap(
                 n for n in orig_melody
                 if matched_start <= n["start"] <= matched_end
             ]
-            # shift times so they start near 0 (aligned with stretched vocal)
             if section_melody:
                 t0_shift = section_melody[0]["start"]
                 section_melody = [
@@ -439,14 +467,14 @@ async def voice_swap(
                 f"[voice-swap] job={job_id} target melody: {len(section_melody)} notes ({time.time()-t_stage:.1f}s)"
             )
 
-            # 4d. Pitch-correct toward target melody
+            # 4e. Pitch-correct toward target melody (freq-dependent)
             t_stage = time.time()
             corrected_path = str(OUTPUT_DIR / f"{job_id}_voice_tuned.wav")
-            logger.info(f"[voice-swap] job={job_id} pitch-correcting toward melody")
+            logger.info(f"[voice-swap] job={job_id} pitch-correcting toward melody (freq-dependent)")
             tune_result = await loop.run_in_executor(
                 None,
                 lambda: pitch_correct_to_melody(
-                    input_path=stretch["output_path"] if stretch["stretched"] else voice_path,
+                    input_path=stretch["output_path"] if stretch["stretched"] else voice_to_use,
                     output_path=corrected_path,
                     target_melody=section_melody,
                     correction_strength=correction_strength,
@@ -454,9 +482,10 @@ async def voice_swap(
             )
             logger.info(f"[voice-swap] job={job_id} pitch correction done ({time.time()-t_stage:.1f}s)")
 
-            # 4e. Mix corrected vocal with matched backing
+            # 4f. Mix corrected vocal with matched backing (enhanced)
             t_stage = time.time()
-            final_path = str(OUTPUT_DIR / f"{job_id}_voice_swap.wav")
+            final_wav = str(OUTPUT_DIR / f"{job_id}_voice_swap.wav")
+            final_mp3 = str(OUTPUT_DIR / f"{job_id}_voice_swap.mp3")
             logger.info(f"[voice-swap] job={job_id} mixing final result")
 
             def _do_mix():
@@ -475,16 +504,28 @@ async def voice_swap(
                 else:
                     stereo = mixed
                 import soundfile as sf
-                sf.write(final_path, stereo, sr)
+                sf.write(final_wav, stereo, sr)
                 return {"duration": float(len(mixed) / sr), "sample_rate": sr}
 
             mix_info = await loop.run_in_executor(None, _do_mix)
-            logger.info(f"[voice-swap] job={job_id} mix done ({time.time()-t_stage:.1f}s)")
+            logger.info(f"[voice-swap] job={job_id} WAV mix done ({time.time()-t_stage:.1f}s)")
+
+            # 4g. Convert to MP3
+            t_stage = time.time()
+            try:
+                await loop.run_in_executor(
+                    None,
+                    lambda: _convert_wav_to_mp3(Path(final_wav), Path(final_mp3)),
+                )
+                logger.info(f"[voice-swap] job={job_id} MP3 conversion done ({time.time()-t_stage:.1f}s)")
+            except Exception as mp3_err:
+                logger.warning(f"[voice-swap] job={job_id} MP3 conversion failed: {mp3_err}")
+                final_mp3 = None
 
             total = time.time() - t0
-            logger.info(f"[voice-swap] job={job_id} completed in {total:.1f}s (new pipeline)")
+            logger.info(f"[voice-swap] job={job_id} completed in {total:.1f}s (melody_match + RVC)")
 
-            return {
+            result = {
                 "success": True,
                 "job_id": job_id,
                 "key": key,
@@ -499,22 +540,42 @@ async def voice_swap(
                 "match_confidence": match["confidence"],
                 "original_start": match["original_start"],
                 "original_end": match["original_end"],
-                "pipeline": "melody_match",
+                "pipeline": "melody_match_rvc",
             }
+            if final_mp3:
+                result["mp3_url"] = f"/outputs/{job_id}_voice_swap.mp3"
+            return result
 
         # ==================================================================
-        # FALLBACK PIPELINE: global key auto-tune (original behaviour)
+        # FALLBACK PIPELINE: global key auto-tune (with RVC if available)
         # ==================================================================
-        logger.info(f"[voice-swap] job={job_id} low confidence ({match['confidence']}) – falling back to global key pipeline")
+        logger.info(f"[voice-swap] job={job_id} low confidence ({match['confidence']}) - falling back")
 
         from src.ml.auto_tune import auto_tune
+
+        converted_path = str(OUTPUT_DIR / f"{job_id}_converted.wav")
+        try:
+            from src.ml.voice_convert import convert_voice
+            t_stage = time.time()
+            conv_result = await loop.run_in_executor(
+                None,
+                lambda: convert_voice(
+                    input_path=voice_path,
+                    output_path=converted_path,
+                    pitch_shift=int(pitch_shift) if pitch_shift else 0,
+                ),
+            )
+            voice_to_use = converted_path if conv_result["success"] else voice_path
+            logger.info(f"[voice-swap] job={job_id} fallback RVC: {conv_result.get('method')} ({time.time()-t_stage:.1f}s)")
+        except Exception:
+            voice_to_use = voice_path
 
         autotuned_voice_path = str(OUTPUT_DIR / f"{job_id}_voice_tuned.wav")
         logger.info(f"[voice-swap] job={job_id} auto-tuning voice to {key} {scale}")
         tune_result = await loop.run_in_executor(
             None,
             lambda: auto_tune(
-                input_path=voice_path,
+                input_path=voice_to_use,
                 output_path=autotuned_voice_path,
                 key=key,
                 scale=scale,
@@ -522,7 +583,8 @@ async def voice_swap(
             ),
         )
 
-        final_path = str(OUTPUT_DIR / f"{job_id}_voice_swap.wav")
+        final_wav = str(OUTPUT_DIR / f"{job_id}_voice_swap.wav")
+        final_mp3 = str(OUTPUT_DIR / f"{job_id}_voice_swap.mp3")
 
         def _do_mix_fallback():
             vocal, sr = load_and_resample(autotuned_voice_path, target_sr=44100)
@@ -540,14 +602,23 @@ async def voice_swap(
             else:
                 stereo = mixed
             import soundfile as sf
-            sf.write(final_path, stereo, sr)
+            sf.write(final_wav, stereo, sr)
             return {"duration": float(len(mixed) / sr), "sample_rate": sr}
 
         await loop.run_in_executor(None, _do_mix_fallback)
-        total = time.time() - t0
-        logger.info(f"[voice-swap] job={job_id} completed in {total:.1f}s (fallback pipeline)")
 
-        return {
+        try:
+            await loop.run_in_executor(
+                None,
+                lambda: _convert_wav_to_mp3(Path(final_wav), Path(final_mp3)),
+            )
+        except Exception:
+            final_mp3 = None
+
+        total = time.time() - t0
+        logger.info(f"[voice-swap] job={job_id} completed in {total:.1f}s (fallback)")
+
+        result = {
             "success": True,
             "job_id": job_id,
             "key": key,
@@ -563,6 +634,9 @@ async def voice_swap(
             "original_end": match["original_end"],
             "pipeline": "global_key_fallback",
         }
+        if final_mp3:
+            result["mp3_url"] = f"/outputs/{job_id}_voice_swap.mp3"
+        return result
 
     except HTTPException:
         raise
@@ -573,11 +647,13 @@ async def voice_swap(
 
 @router.get("/download/{filename}")
 async def download_file(filename: str):
-    """Download a processed audio file."""
+    """Download a processed audio file (WAV or MP3)."""
     filepath = (OUTPUT_DIR / filename).resolve()
     if not filepath.exists() or not filepath.is_relative_to(OUTPUT_DIR.resolve()):
         raise HTTPException(404, "File not found")
-    return FileResponse(filepath, media_type="audio/wav", filename=filename)
+    ext = filepath.suffix.lower()
+    media_type = "audio/mpeg" if ext == ".mp3" else "audio/wav"
+    return FileResponse(filepath, media_type=media_type, filename=filename)
 
 
 @router.get("/analyze/{filename}")

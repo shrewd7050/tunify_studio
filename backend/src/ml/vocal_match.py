@@ -1,37 +1,25 @@
 """
 Vocal matching and alignment module for Tunify Voice Swap.
 
-Pipeline:
+Improved pipeline:
   1. Extract melody (note events) from vocal audio using pyin
-  2. Compute chroma features for key-invariant matching
-  3. Match user vocal phrase to original via sliding-window chroma + contour correlation
-  4. Extract the matching backing section
-  5. Time-stretch user vocal to match section duration
-  6. Pitch-correct user vocal toward original melody notes
+  2. MFCC + chroma features for robust matching
+  3. DTW-aligned phrase matching (handles tempo differences)
+  4. Beat-aware backing extraction with crossfading
+  5. Phase-vocoder time-stretching
+  6. Frequency-dependent pitch correction (lows/mids/highs scaled differently)
 """
 
 import numpy as np
 import librosa
 import soundfile as sf
 import logging
+from scipy.ndimage import median_filter
 
 logger = logging.getLogger("tunify")
 
 
-# ---------------------------------------------------------------------------
-# Melody extraction
-# ---------------------------------------------------------------------------
-
 def extract_melody(audio_path, sr=22050, min_note_duration=0.05):
-    """
-    Extract melody as note events from vocal audio.
-
-    Uses librosa pyin for f0 detection, then groups consecutive voiced frames
-    with similar pitch into discrete note events.
-
-    Returns:
-        [{"start": float, "end": float, "midi": float, "confidence": float}, ...]
-    """
     y, sr = librosa.load(audio_path, sr=sr, mono=True)
 
     f0, voiced_flag, voiced_probs = librosa.pyin(
@@ -42,7 +30,6 @@ def extract_melody(audio_path, sr=22050, min_note_duration=0.05):
     )
 
     times = librosa.times_like(f0, sr=sr)
-
     notes = []
     current = None
 
@@ -93,41 +80,24 @@ def extract_melody(audio_path, sr=22050, min_note_duration=0.05):
     return notes
 
 
-# ---------------------------------------------------------------------------
-# Chroma features
-# ---------------------------------------------------------------------------
-
 def compute_chroma_contour(audio_path, sr=22050, hop_length=512):
-    """
-    Compute chroma-CQT features (12-dimensional, key-invariant).
-
-    Returns:
-        (chroma: np.ndarray(12, n_frames), times: np.ndarray(n_frames))
-    """
     y, sr = librosa.load(audio_path, sr=sr, mono=True)
     chroma = librosa.feature.chroma_cqt(y=y, sr=sr, hop_length=hop_length)
     times = librosa.times_like(chroma, sr=sr, hop_length=hop_length)
     return chroma, times
 
 
-# ---------------------------------------------------------------------------
-# Phrase matching
-# ---------------------------------------------------------------------------
+def compute_mfcc_features(audio_path, sr=22050, hop_length=512, n_mfcc=20):
+    y, sr = librosa.load(audio_path, sr=sr, mono=True)
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc, hop_length=hop_length)
+    delta_mfcc = librosa.feature.delta(mfcc)
+    combined = np.vstack([mfcc, delta_mfcc])
+    times = librosa.times_like(mfcc, sr=sr, hop_length=hop_length)
+    return combined, times
+
 
 def match_vocal_phrase(original_vocal_path, user_vocal_path, sr=22050):
-    """
-    Find which time-range in the original vocal matches the user's recording.
-
-    Uses two complementary methods:
-      A) Chroma-based sliding-window cosine similarity  (key-invariant)
-      B) Pitch-contour interval correlation             (melody-shape)
-
-    Returns dict with keys:
-        success, original_start, original_end, confidence,
-        user_duration, original_duration,
-        chroma_score, contour_score
-    """
-    logger.info("[match] starting vocal phrase matching")
+    logger.info("[match] starting vocal phrase matching (MFCC+DTW + chroma)")
 
     orig_y, _ = librosa.load(original_vocal_path, sr=sr, mono=True)
     user_y, _ = librosa.load(user_vocal_path, sr=sr, mono=True)
@@ -140,7 +110,43 @@ def match_vocal_phrase(original_vocal_path, user_vocal_path, sr=22050):
         logger.warning("[match] audio too short for reliable matching")
         return _fail_result(user_duration, orig_duration)
 
-    # ---- Method A: chroma sliding window ----
+    # ---- Method A: MFCC + DTW alignment ----
+    mfcc_score = 0.0
+    mfcc_start = 0.0
+    orig_mfcc = None
+
+    try:
+        orig_mfcc, orig_mfcc_times = compute_mfcc_features(original_vocal_path, sr=sr)
+        user_mfcc, _ = compute_mfcc_features(user_vocal_path, sr=sr)
+
+        hop = 512
+        frame_dur = hop / sr
+        user_frames = user_mfcc.shape[1]
+        orig_frames = orig_mfcc.shape[1]
+
+        best_dtw_cost = float("inf")
+        best_dtw_start_frame = 0
+
+        window_size = user_frames
+        if window_size < orig_frames:
+            step = max(1, window_size // 4)
+            for i in range(0, orig_frames - window_size + 1, step):
+                orig_slice = orig_mfcc[:, i:i + window_size]
+                D, wp = librosa.sequence.dtw(X=orig_slice.T, Y=user_mfcc.T, metric="cosine")
+                cost = D[-1, -1] / max(len(wp), 1)
+                if cost < best_dtw_cost:
+                    best_dtw_cost = cost
+                    best_dtw_start_frame = i
+
+        mfcc_start = float(best_dtw_start_frame * frame_dur)
+        max_cost = 5.0
+        mfcc_score = max(0.0, 1.0 - min(best_dtw_cost, max_cost) / max_cost)
+        logger.info(f"[match] MFCC+DTW: start={mfcc_start:.1f}s  score={mfcc_score:.3f}")
+
+    except Exception as e:
+        logger.warning(f"[match] MFCC+DTW failed, falling back to chroma only: {e}")
+
+    # ---- Method B: Chroma sliding window (key-invariant) ----
     orig_chroma, orig_times = compute_chroma_contour(original_vocal_path, sr=sr)
     user_chroma, _ = compute_chroma_contour(user_vocal_path, sr=sr)
 
@@ -156,8 +162,9 @@ def match_vocal_phrase(original_vocal_path, user_vocal_path, sr=22050):
     best_chroma_frame = 0
 
     if window_frames < n_orig:
-        for i in range(n_orig - window_frames + 1):
-            w = orig_chroma[:, i : i + window_frames]
+        step = max(1, window_frames // 4)
+        for i in range(0, n_orig - window_frames + 1, step):
+            w = orig_chroma[:, i:i + window_frames]
             wp = np.mean(w, axis=1)
             wn = np.linalg.norm(wp)
             if wn > 0:
@@ -170,7 +177,7 @@ def match_vocal_phrase(original_vocal_path, user_vocal_path, sr=22050):
     chroma_start = float(orig_times[best_chroma_frame])
     logger.info(f"[match] chroma: start={chroma_start:.1f}s  score={best_chroma_score:.3f}")
 
-    # ---- Method B: pitch-contour interval correlation ----
+    # ---- Method C: Pitch-contour interval correlation ----
     orig_melody = extract_melody(original_vocal_path, sr=sr)
     user_melody = extract_melody(user_vocal_path, sr=sr)
 
@@ -189,8 +196,9 @@ def match_vocal_phrase(original_vocal_path, user_vocal_path, sr=22050):
         user_len = len(user_int)
 
         if user_len < len(orig_int):
-            for i in range(len(orig_int) - user_len + 1):
-                w = orig_int[i : i + user_len]
+            step = max(1, user_len // 4)
+            for i in range(0, len(orig_int) - user_len + 1, step):
+                w = orig_int[i:i + user_len]
                 w = w - np.mean(w)
                 std_w = np.std(w)
                 std_u = np.std(user_int)
@@ -206,19 +214,22 @@ def match_vocal_phrase(original_vocal_path, user_vocal_path, sr=22050):
 
     logger.info(f"[match] contour: start={contour_start:.1f}s  score={contour_score:.3f}")
 
-    # ---- Combine ----
-    combined = best_chroma_score * 0.6 + contour_score * 0.4
-    final_start = chroma_start
+    # ---- Combine all methods ----
+    if orig_mfcc is not None:
+        combined = mfcc_score * 0.35 + best_chroma_score * 0.35 + contour_score * 0.30
+        final_start = mfcc_start if mfcc_score > best_chroma_score else chroma_start
+    else:
+        combined = best_chroma_score * 0.6 + contour_score * 0.4
+        final_start = chroma_start
+
     final_end = final_start + user_duration
     final_start = max(0.0, min(final_start, orig_duration - user_duration))
     final_end = min(orig_duration, final_start + user_duration)
 
-    logger.info(
-        f"[match] combined={combined:.3f}  section={final_start:.1f}s–{final_end:.1f}s"
-    )
+    logger.info(f"[match] combined={combined:.3f}  section={final_start:.1f}s-{final_end:.1f}s")
 
     return {
-        "success": combined > 0.3,
+        "success": combined > 0.15,
         "original_start": round(final_start, 2),
         "original_end": round(final_end, 2),
         "confidence": round(min(1.0, max(0.0, combined)), 3),
@@ -226,6 +237,7 @@ def match_vocal_phrase(original_vocal_path, user_vocal_path, sr=22050):
         "original_duration": round(orig_duration, 2),
         "chroma_score": round(best_chroma_score, 3),
         "contour_score": round(contour_score, 3),
+        "mfcc_score": round(mfcc_score, 3) if orig_mfcc is not None else None,
     }
 
 
@@ -239,18 +251,28 @@ def _fail_result(user_dur, orig_dur):
         "original_duration": round(orig_dur, 2),
         "chroma_score": 0.0,
         "contour_score": 0.0,
+        "mfcc_score": None,
     }
 
 
-# ---------------------------------------------------------------------------
-# Backing extraction
-# ---------------------------------------------------------------------------
-
-def extract_backing_section(backing_path, start_time, end_time, output_path, sr=44100, fade_ms=50):
-    """
-    Slice a time-range from the backing track with short fades.
-    """
+def extract_backing_section(backing_path, start_time, end_time, output_path, sr=44100, fade_ms=300):
     y, sr = librosa.load(backing_path, sr=sr, mono=True)
+
+    try:
+        tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
+        beat_times = librosa.frames_to_time(beat_frames, sr=sr)
+
+        if len(beat_times) > 0:
+            start_snap = float(beat_times[np.argmin(np.abs(beat_times - start_time))])
+            end_snap = float(beat_times[np.argmin(np.abs(beat_times - end_time))])
+            if end_snap <= start_snap:
+                end_snap = start_snap + (end_time - start_time)
+            start_time = max(0.0, start_snap)
+            end_time = min(len(y) / sr, end_snap)
+            logger.info(f"[backing] snapped to beat grid: {start_time:.2f}s - {end_time:.2f}s")
+    except Exception as e:
+        logger.warning(f"[backing] beat detection failed, using raw times: {e}")
+
     s = max(0, int(start_time * sr))
     e = min(len(y), int(end_time * sr))
     section = y[s:e].copy()
@@ -262,60 +284,45 @@ def extract_backing_section(backing_path, start_time, end_time, output_path, sr=
 
     sf.write(output_path, section, sr)
     dur = len(section) / sr
-    logger.info(f"[backing] extracted {dur:.1f}s ({start_time:.1f}s–{end_time:.1f}s)")
+    logger.info(f"[backing] extracted {dur:.1f}s ({start_time:.1f}s - {end_time:.1f}s)")
     return {"success": True, "output_path": output_path, "duration": dur}
 
 
-# ---------------------------------------------------------------------------
-# Time-stretch
-# ---------------------------------------------------------------------------
-
 def time_stretch_vocal(audio_path, output_path, target_duration, sr=44100):
-    """
-    Time-stretch audio to *target_duration* without changing pitch.
-    Skips if the required rate is extreme (<0.5 or >2.0).
-    """
     y, sr = librosa.load(audio_path, sr=sr, mono=True)
     orig_dur = len(y) / sr
 
     if abs(orig_dur - target_duration) < 0.1 or target_duration <= 0:
         sf.write(output_path, y, sr)
-        return {"success": True, "original_duration": orig_dur, "stretched_duration": orig_dur, "stretched": False}
+        return {"success": True, "original_duration": orig_dur, "stretched_duration": orig_dur, "stretched": False, "output_path": output_path}
 
     rate = orig_dur / target_duration
-    if rate < 0.5 or rate > 2.0:
-        logger.warning(f"[stretch] rate {rate:.2f} too extreme – copying without stretch")
+    if rate < 0.25 or rate > 4.0:
+        logger.warning(f"[stretch] rate {rate:.2f} too extreme - copying without stretch")
         sf.write(output_path, y, sr)
-        return {"success": True, "original_duration": orig_dur, "stretched_duration": orig_dur, "stretched": False}
+        return {"success": True, "original_duration": orig_dur, "stretched_duration": orig_dur, "stretched": False, "output_path": output_path}
 
-    y_s = librosa.effects.time_stretch(y, rate=rate)
+    n_fft = 2048
+    hop = 512
+    D = librosa.stft(y, n_fft=n_fft, hop_length=hop)
+    D_stretched = librosa.phase_vocoder(D, rate=rate)
+    y_s = librosa.istft(D_stretched, hop_length=hop)
     sf.write(output_path, y_s, sr)
     s_dur = len(y_s) / sr
-    logger.info(f"[stretch] {orig_dur:.1f}s → {s_dur:.1f}s (rate={rate:.3f})")
-    return {"success": True, "original_duration": orig_dur, "stretched_duration": s_dur, "stretched": True}
+    logger.info(f"[stretch] {orig_dur:.1f}s -> {s_dur:.1f}s (rate={rate:.3f})")
+    return {"success": True, "original_duration": orig_dur, "stretched_duration": s_dur, "stretched": True, "output_path": output_path}
 
 
-# ---------------------------------------------------------------------------
-# Melody-based pitch correction
-# ---------------------------------------------------------------------------
+def _freq_dependent_strength(freq_hz, base_strength):
+    if freq_hz < 200:
+        return base_strength * 0.5
+    elif freq_hz < 1000:
+        return base_strength * 1.0
+    else:
+        return base_strength * 1.2
+
 
 def pitch_correct_to_melody(input_path, output_path, target_melody, correction_strength=0.8, sr=44100):
-    """
-    Correct pitch of *input_path* toward the notes in *target_melody*.
-
-    Unlike ``auto_tune`` (which snaps to a fixed scale), this corrects toward
-    the specific MIDI notes from the matched original section.
-
-    Parameters
-    ----------
-    target_melody : list[dict]
-        Note events with at least ``"start"``, ``"end"``, ``"midi"`` keys.
-        Times should already be shifted to start near 0.
-    correction_strength : float
-        0 = no correction, 1 = hard snap to target notes.
-
-    Returns dict with success, notes_corrected, duration.
-    """
     y, sr = librosa.load(input_path, sr=sr, mono=True)
 
     f0, voiced_flag, voiced_probs = librosa.pyin(
@@ -329,7 +336,7 @@ def pitch_correct_to_melody(input_path, output_path, target_melody, correction_s
 
     if len(target_melody) == 0:
         sf.write(output_path, y, sr)
-        logger.warning("[pitch-correct] empty target melody – copying input")
+        logger.warning("[pitch-correct] empty target melody - copying input")
         return {"success": True, "notes_corrected": 0, "duration": len(y) / sr}
 
     t_start = np.array([n["start"] for n in target_melody])
@@ -340,7 +347,11 @@ def pitch_correct_to_melody(input_path, output_path, target_melody, correction_s
 
     valid = (~np.isnan(f0)) & (f0 > 0)
     ratios = np.ones_like(f0)
-    ratios[valid] = 1.0 + (target_hz[valid] / f0[valid] - 1.0) * correction_strength
+
+    for i in range(len(f0)):
+        if valid[i]:
+            strength = _freq_dependent_strength(f0[i], correction_strength)
+            ratios[i] = 1.0 + (target_hz[i] / f0[i] - 1.0) * strength
 
     n_fft = 2048
     hop = 512
@@ -353,6 +364,8 @@ def pitch_correct_to_melody(input_path, output_path, target_melody, correction_s
     if len(ratios) != n_frames:
         ratios = np.interp(np.linspace(0, 1, n_frames), np.linspace(0, 1, len(ratios)), ratios)
 
+    ratios = median_filter(ratios, size=5)
+
     out_D = np.empty_like(D)
     for i in range(n_frames):
         r = ratios[i]
@@ -360,11 +373,12 @@ def pitch_correct_to_melody(input_path, output_path, target_melody, correction_s
             out_D[:, i] = D[:, i]
         else:
             new_mag = np.interp(freqs, freqs * r, mag[:, i], left=0.0, right=0.0)
-            out_D[:, i] = new_mag * np.exp(1j * phase[:, i])
+            phase_shift = np.cumsum(np.full(len(freqs), 2 * np.pi * (r - 1) * freqs / sr))
+            out_D[:, i] = new_mag * np.exp(1j * (phase[:, i] + phase_shift))
 
     out_y = librosa.istft(out_D, hop_length=hop, length=len(y))
     sf.write(output_path, out_y, sr)
 
     n_corrected = int(np.sum(valid))
-    logger.info(f"[pitch-correct] corrected {n_corrected} frames toward target melody")
+    logger.info(f"[pitch-correct] corrected {n_corrected} frames toward target melody (freq-dependent)")
     return {"success": True, "notes_corrected": n_corrected, "duration": float(len(y) / sr)}

@@ -665,3 +665,118 @@ Traceback (most recent call last):
 2026-09-11 03:35:53,333 INFO [MusicGen] torch.compile applied to LM and compression model
 2026-09-11 03:35:53,333 INFO [MusicGen] Model loaded on cuda (torch.float16)
 2026-09-11 03:35:53,334 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-13 19:12:41,160 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-13 19:12:41,162 INFO [Tunify] VRAM: 6.0 GB
+2026-09-13 19:13:27,760 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-13 19:13:57,428 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-13 19:13:59,708 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-13 19:13:59,709 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-13 19:13:59,709 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-13 19:15:07,471 INFO [voice-swap] job=bb7fcbd4 files saved & converted (2.6s)
+2026-09-13 19:15:07,472 INFO [voice-swap] job=bb7fcbd4 separating vocals (demucs)
+2026-09-13 19:15:11,418 ERROR demucs failed (rc=1): Traceback (most recent call last):
+  File "C:\Python313\Lib\urllib\request.py", line 1319, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\http\client.py", line 1338, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~
+2026-09-13 19:15:16,403 INFO [voice-swap] job=ec00f930 files saved & converted (0.6s)
+2026-09-13 19:15:16,403 INFO [voice-swap] job=ec00f930 separating vocals (demucs)
+2026-09-13 19:15:18,982 ERROR demucs failed (rc=1): Traceback (most recent call last):
+  File "C:\Python313\Lib\urllib\request.py", line 1319, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\http\client.py", line 1338, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~
+2026-09-19 20:28:27,914 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-19 20:28:27,915 INFO [Tunify] VRAM: 6.0 GB
+2026-09-19 20:29:14,308 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-19 20:29:23,496 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-19 20:29:26,067 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-19 20:29:26,067 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-19 20:29:26,068 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-19 20:30:44,087 INFO [voice-swap] job=c92d9e92 files saved & converted (2.5s)
+2026-09-19 20:30:44,087 INFO [voice-swap] job=c92d9e92 separating vocals (demucs)
+2026-09-19 20:31:06,516 ERROR demucs failed (rc=1): 
+  0%|          | 0.00/80.2M [00:00<?, ?B/s]
+  0%|          | 384k/80.2M [00:00<00:23, 3.53MB/s]
+  2%|1         | 1.50M/80.2M [00:00<00:10, 7.80MB/s]
+  3%|3         | 2.62M/80.2M [00:00<00:08, 9.37MB/s]
+  5%|4         | 4.00M/80.2M [00:00<00:07, 11.2MB/s]
+  7%|6         | 5.25M/80.2M [00:00<00:06, 11.7MB/s]
+  8%|8         | 6.62M/80.2M [00:00<00:06, 12.6MB/s]
+ 10%|#         | 8.12M/80.2M [00:00<00:05, 13.4MB/s]
+ 12%|#1        | 9.50M/80.2M [00:00<00:05, 13.3MB/s]
+ 14%|#3        | 11.0M/80.2M [00
+2026-09-19 22:35:46,011 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-19 22:35:46,012 INFO [Tunify] VRAM: 6.0 GB
+2026-09-19 22:36:19,710 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-19 22:36:26,272 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-19 22:36:28,001 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-19 22:36:28,001 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-19 22:36:28,001 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-19 22:58:11,258 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-19 22:58:11,259 INFO [Tunify] VRAM: 6.0 GB
+2026-09-19 22:58:31,607 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-19 22:58:39,092 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-19 22:58:41,205 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-19 22:58:41,206 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-19 22:58:41,206 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-19 23:10:07,236 INFO [Tunify] GPU: NVIDIA GeForce RTX 4050 Laptop GPU
+2026-09-19 23:10:07,237 INFO [Tunify] VRAM: 6.0 GB
+2026-09-19 23:10:28,467 INFO [MusicGen] Loading model 'facebook/musicgen-small' on cuda (torch.float16)...
+2026-09-19 23:10:35,932 INFO [MusicGen] xformers memory-efficient attention enabled
+2026-09-19 23:10:38,417 INFO [MusicGen] torch.compile applied to LM and compression model
+2026-09-19 23:10:38,417 INFO [MusicGen] Model loaded on cuda (torch.float16)
+2026-09-19 23:10:38,417 INFO [Tunify] MusicGen model pre-warmed successfully
+2026-09-20 02:00:55,239 INFO [voice-swap] job=3097b1ca files saved & converted (2.5s)
+2026-09-20 02:00:55,241 INFO [voice-swap] job=3097b1ca separating vocals (demucs)
+2026-09-20 02:00:56,191 INFO [demucs] htdemucs model verified in cache
+2026-09-20 02:01:22,178 INFO [voice-swap] job=3097b1ca demucs done (26.9s)
+2026-09-20 02:01:31,321 INFO [voice-swap] job=3097b1ca key=C# major tempo=83
+2026-09-20 02:01:31,321 INFO [voice-swap] job=3097b1ca matching vocal phrases
+2026-09-20 02:01:31,322 INFO [match] starting vocal phrase matching (MFCC+DTW + chroma)
+2026-09-20 02:01:31,792 INFO [match] original vocal: 263.4s  user vocal: 59.7s
+2026-09-20 02:01:33,550 INFO [match] MFCC+DTW: start=104.5s  score=0.844
+2026-09-20 02:01:36,381 INFO [match] chroma: start=0.0s  score=0.970
+2026-09-20 02:01:48,276 INFO [melody] extracted 641 notes from outputs\3097b1ca\htdemucs\3097b1ca_orig\vocals.wav
+2026-09-20 02:01:50,737 INFO [melody] extracted 128 notes from uploads\3097b1ca_voice.wav
+2026-09-20 02:01:50,741 INFO [match] contour: start=180.0s  score=0.134
+2026-09-20 02:01:50,741 INFO [match] combined=0.675  section=0.0s-59.7s
+2026-09-20 02:01:50,744 INFO [voice-swap] job=3097b1ca match: start=0.0s end=59.7s  confidence=0.675  (19.4s)
+2026-09-20 02:01:50,744 INFO [voice-swap] job=3097b1ca extracting backing section 0.0s-59.7s
+2026-09-20 02:01:52,826 INFO [backing] snapped to beat grid: 10.80s - 59.37s
+2026-09-20 02:01:52,849 INFO [backing] extracted 48.6s (10.8s - 59.4s)
+2026-09-20 02:01:52,852 INFO [voice-swap] job=3097b1ca backing section: 48.6s (2.1s)
+2026-09-20 02:01:52,852 INFO [voice-swap] job=3097b1ca RVC voice conversion
+2026-09-20 02:01:56,260 INFO [VoiceConvert] Initializing RVC on cuda:0
+2026-09-20 02:03:30,426 WARNING [VoiceConvert] No voice model specified, using default
+2026-09-20 02:03:30,427 INFO [VoiceConvert] Converting: uploads\3097b1ca_voice.wav -> outputs\3097b1ca_converted.wav (pitch=0, f0=rmvpe, index_rate=0.5)
+2026-09-20 02:03:30,427 ERROR [VoiceConvert] RVC inference failed: Please load a model first.
+2026-09-20 02:03:30,427 INFO [VoiceConvert] Fallback: librosa pitch shift by 0 semitones
+2026-09-20 02:03:30,497 INFO [voice-swap] job=3097b1ca voice conversion: librosa_fallback (97.6s)
+2026-09-20 02:03:30,498 INFO [voice-swap] job=3097b1ca time-stretching voice
+2026-09-20 02:03:31,420 INFO [stretch] 59.7s -> 48.6s (rate=1.229)
+2026-09-20 02:03:31,424 INFO [voice-swap] job=3097b1ca stretch done (0.9s)
+2026-09-20 02:03:31,424 INFO [voice-swap] job=3097b1ca extracting target melody for section
+2026-09-20 02:03:42,883 INFO [melody] extracted 641 notes from outputs\3097b1ca\htdemucs\3097b1ca_orig\vocals.wav
+2026-09-20 02:03:42,884 INFO [voice-swap] job=3097b1ca target melody: 143 notes (11.5s)
+2026-09-20 02:03:42,885 INFO [voice-swap] job=3097b1ca pitch-correcting toward melody (freq-dependent)
+2026-09-20 02:03:46,824 INFO [pitch-correct] corrected 3492 frames toward target melody (freq-dependent)
+2026-09-20 02:03:46,830 INFO [voice-swap] job=3097b1ca pitch correction done (3.9s)
+2026-09-20 02:03:46,831 INFO [voice-swap] job=3097b1ca mixing final result
+2026-09-20 02:03:49,660 INFO [voice-swap] job=3097b1ca WAV mix done (2.8s)
+2026-09-20 02:03:50,072 INFO [voice-swap] job=3097b1ca MP3 conversion done (0.4s)
+2026-09-20 02:03:50,073 INFO [voice-swap] job=3097b1ca completed in 177.4s (melody_match + RVC)
+2026-09-20 02:13:11,919 INFO [MusicGen] Generating: 'bass with guitar music for intro section of a song' (30.0s)
+2026-09-20 02:14:53,257 INFO [MusicGen] Saved to outputs\7711f8b5_generated.wav (30.0s)
+2026-09-20 02:17:03,459 INFO [MusicGen] Generating: 'bass , strong guitar volume in every 2-3 sec but after 10 sec' (30.0s)
+2026-09-20 02:18:41,543 INFO [MusicGen] Saved to outputs\72c9a2ca_generated.wav (30.0s)
+2026-09-20 02:20:32,789 INFO [MusicGen] Generating: 'vibe music' (30.0s)
+2026-09-20 02:22:07,912 INFO [MusicGen] Saved to outputs\b6abd2ec_generated.wav (30.0s)

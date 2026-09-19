@@ -216,17 +216,100 @@ def _apply_sidechain_ducking(vocal: np.ndarray, backing: np.ndarray, sr: int, am
     return backing * duck_samples
 
 
+def _apply_deesser(y, sr, freq_hz=6500, gain_db=-4.0, q=2.0):
+    return _apply_eq_band(y, sr, freq_hz, gain_db, q=q)
+
+
+def _apply_soft_compressor(y, sr, threshold_db=-18.0, ratio=3.0, attack_ms=10, release_ms=100):
+    from scipy.signal import lfilter
+    threshold = 10 ** (threshold_db / 20.0)
+    soft_knee = 0.5 * threshold
+
+    attack_coeff = np.exp(-1.0 / max(int(sr * attack_ms / 1000), 1))
+    release_coeff = np.exp(-1.0 / max(int(sr * release_ms / 1000), 1))
+
+    abs_y = np.abs(y)
+    n = len(y)
+    envelope = np.zeros(n)
+    env_val = 0.0
+    for i in range(n):
+        coeff = attack_coeff if abs_y[i] > env_val else release_coeff
+        env_val = coeff * env_val + (1.0 - coeff) * abs_y[i]
+        envelope[i] = env_val
+
+    gain = np.ones(n)
+    for i in range(n):
+        e = envelope[i]
+        if e > threshold + soft_knee:
+            gain[i] = (threshold + (e - threshold) / ratio) / max(e, 1e-8)
+        elif e > threshold - soft_knee:
+            x = (e - (threshold - soft_knee)) / (2 * soft_knee)
+            g_above = (threshold + (e - threshold) / ratio) / max(e, 1e-8)
+            g_below = 1.0
+            gain[i] = g_below + x * (g_above - g_below)
+
+    return y * gain
+
+
+def _apply_sidechain_ducking(vocal, backing, sr, amount=0.15):
+    hop = 512
+    lookahead_samples = int(sr * 0.005)
+    n_frames = 1 + len(vocal) // hop
+    vocal_env = np.zeros(n_frames)
+    for i in range(n_frames):
+        s = i * hop
+        e = min(s + hop, len(vocal))
+        vocal_env[i] = np.sqrt(np.mean(vocal[s:e] ** 2))
+
+    vocal_env = np.maximum(vocal_env, 0.0)
+    threshold = np.mean(vocal_env) * 1.0
+    duck = np.ones(n_frames)
+    max_env = np.max(vocal_env) + 1e-8
+    mask = vocal_env > threshold
+    duck[mask] = 1.0 - amount * ((vocal_env[mask] - threshold) / (max_env - threshold))
+
+    duck_samples = np.interp(np.arange(len(backing)), np.arange(n_frames) * hop, duck)
+
+    if lookahead_samples > 0 and lookahead_samples < len(duck_samples):
+        duck_samples = np.roll(duck_samples, -lookahead_samples)
+        duck_samples[-lookahead_samples:] = duck_samples[-lookahead_samples - 1]
+
+    return backing * duck_samples
+
+
 def _apply_multiband_processing(vocal: np.ndarray, backing: np.ndarray, sr: int) -> tuple:
     """Apply frequency-aware processing to vocal + backing pair."""
     backing = _carve_vocal_space(backing, sr)
     backing = _boost_bass(backing, sr, boost_db=1.5)
-    backing = _apply_sidechain_ducking(vocal, backing, sr, amount=0.12)
-    vocal = _apply_eq_band(vocal, sr, 3000, 1.5, q=1.0)
+    backing = _apply_sidechain_ducking(vocal, backing, sr, amount=0.15)
+
+    vocal = _apply_eq_band(vocal, sr, 3500, 2.0, q=0.8)
     vocal = _apply_eq_band(vocal, sr, 120, -2.0, q=0.8)
+    vocal = _apply_deesser(vocal, sr)
+    vocal = _apply_soft_compressor(vocal, sr)
+
     vocal_peak = np.max(np.abs(vocal))
     if vocal_peak > 0:
         vocal = vocal / vocal_peak
+    backing_peak = np.max(np.abs(backing))
+    if backing_peak > 0:
+        backing = backing / backing_peak
+
     return vocal, backing
+
+
+def _ensure_demucs_model():
+    """Pre-download the htdemucs model if not already cached."""
+    import torch
+    from demucs.pretrained import get_model
+    try:
+        get_model("htdemucs")
+        logger.info("[demucs] htdemucs model verified in cache")
+    except Exception as e:
+        logger.warning(f"[demucs] model pre-download failed: {e}")
+
+
+_demucs_model_checked = False
 
 
 def separate_vocals(audio_path: str, output_dir: str) -> dict:
@@ -234,20 +317,35 @@ def separate_vocals(audio_path: str, output_dir: str) -> dict:
     import subprocess
     import os
 
+    global _demucs_model_checked
+    if not _demucs_model_checked:
+        try:
+            _ensure_demucs_model()
+        except Exception:
+            pass
+        _demucs_model_checked = True
+
     os.makedirs(output_dir, exist_ok=True)
 
     try:
+        import static_ffmpeg
+        static_ffmpeg.add_paths()
+
+        env = os.environ.copy()
+
+        wrapper_path = str(Path(__file__).parent / "demucs_wrapper.py")
         cmd = [
-            sys.executable, "-m", "demucs",
+            sys.executable, wrapper_path,
             "--out", output_dir,
             "--two-stems", "vocals",
             audio_path,
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600, env=env)
 
         if result.returncode != 0:
-            logger.error(f"demucs failed (rc={result.returncode}): {result.stderr[:500]}")
-            return {"success": False, "error": result.stderr[:300] or "demucs process failed"}
+            combined_output = (result.stdout or "") + (result.stderr or "")
+            logger.error(f"demucs failed (rc={result.returncode}): {combined_output[:1000]}")
+            return {"success": False, "error": combined_output[:500] or "demucs process failed"}
 
         audio_name = Path(audio_path).stem
         vocals_path = os.path.join(output_dir, "htdemucs", audio_name, "vocals.wav")
@@ -277,4 +375,5 @@ def separate_vocals(audio_path: str, output_dir: str) -> dict:
             "accompaniment_path": accompaniment_path,
         }
     except Exception as e:
+        logger.error(f"demucs exception: {e}", exc_info=True)
         return {"success": False, "error": str(e)}
